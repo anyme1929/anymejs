@@ -1,7 +1,7 @@
 {
-  "name": "anymejs",
+  "name": "@anyme/anymejs",
   "version": "1.0.0",
-  "description": "",
+  "description": "anymejs",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
@@ -15,11 +15,15 @@
     "prepublishOnly": "pnpm run build"
   },
   "license": "MIT",
-  "keywords": ["express", "node", "typescript"],
+  "keywords": [
+    "express",
+    "node",
+    "typescript"
+  ],
   "author": "656538470@qq.com",
-  "repository": {  
+  "repository": {
     "type": "git",
-    "url": "https://github.com/anyme1929/anymejs.git"
+    "url": "git+https://github.com/anyme1929/anymejs.git"
   },
   "packageManager": "pnpm@10.13.1",
   "peerDependencies": {
