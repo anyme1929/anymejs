@@ -1,0 +1,4 @@
+node_modules/*
+app.config.ts
+pnpm-lock.yaml
+log/*
