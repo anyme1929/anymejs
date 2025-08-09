@@ -1,5 +1,6 @@
-dist/*
+
 node_modules/*
 app.config.ts
 pnpm-lock.yaml
 logs/*
+dist/*

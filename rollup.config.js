@@ -54,8 +54,8 @@ export default defineConfig([
             dir: 'dist/cjs',
             format: 'cjs',
             sourcemap: true,
-            preserveModules: true,
-            preserveModulesRoot: 'src'
+            // preserveModules: true,
+            // preserveModulesRoot: 'src'
         },
         plugins: [
             nodeExternals({

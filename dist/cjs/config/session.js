@@ -1,2 +1,0 @@
-"use strict";var e=require("express-session"),s=require("../utils/session-ioredis.js");module.exports=class{constructor(e){this.handler=null,this.config={secret:"session",resave:!1,saveUninitialized:!1},this.config=Object.assign({},this.config,e)}setRedis(e,s){if(!s)throw new Error("Redis instance is required");this.config.store=this.createRedisStore(e,s)}createRedisStore(e,i){return new s({client:i,prefix:e})}getHandler(){return this.handler??(this.handler=e(this.config)),this.handler}};
-//# sourceMappingURL=session.js.map

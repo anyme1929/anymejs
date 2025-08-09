@@ -1,1 +1,0 @@
-{"version":3,"file":"db.js","sources":["../../../src/config/db.ts"],"sourcesContent":[null],"names":["dataSource","config","enable","client","DataSource"],"mappings":"sCAEA,IAAIA,EAAgC,oBACpBC,IACd,MAAMC,OAAEA,EAAMC,OAAEA,GAAWF,EAC3B,GAAKC,EACL,OAAIF,IACJA,EAAa,IAAII,EAAAA,WAAWD,GACrBH"}
