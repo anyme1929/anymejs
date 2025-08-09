@@ -101,6 +101,9 @@ export interface IConfig {
   is_dev: boolean;
   /** API 路由全局前缀 */
   api_prefix: string;
+  logger: {
+    level: "info" | "debug" | "warn" | "error" | "";
+  };
   /** 数据库配置选项 */
   db: {
     /** 是否启用数据库连接 */
@@ -194,6 +197,10 @@ export interface IGlobalMiddlewares {
   routers: Map<string, RequestHandler | RequestHandler[]>;
   init(app: Application): IGlobalMiddlewares;
   register(...handlers: (RequestHandler | IHandler)[]): void;
+}
+export interface LoadEnvOptions {
+  cwd?: string;
+  override?: boolean;
 }
 // 新增类型工具
 export type DeepPartial<T> = {

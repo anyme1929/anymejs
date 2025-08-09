@@ -58,7 +58,7 @@
     "@types/express": "^5.0.3",
     "@types/express-session": "^1.18.2",
     "@types/morgan": "^1.9.10",
-    "@types/node": "^24.1.0",
+    "@types/node": "^24.2.1",
     "nodemon": "^3.1.10",
     "rollup": "^4.46.2",
     "rollup-plugin-dts": "^6.2.1",

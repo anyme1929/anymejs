@@ -1,4 +1,6 @@
-import type { DeepPartial, userConfig } from "../types";
+import { existsSync, readFileSync } from "node:fs";
+import { join, isAbsolute } from "node:path";
+import type { DeepPartial, userConfig, LoadEnvOptions } from "../types";
 export function isObject(obj: unknown): obj is Record<string, unknown> {
   return (
     typeof obj === "object" &&
@@ -48,4 +50,53 @@ export function isEmpty<T>(value: T) {
 }
 export function defineConfig(config: userConfig): userConfig {
   return config;
+}
+// 专用文件加载函数
+function loadSingleEnv(path: string, override: boolean) {
+  const envContent = readFileSync(path, "utf8");
+  for (const line of envContent.split(/\r?\n/)) {
+    // 跳过空行和注释
+    if (!line.trim() || line.trim().startsWith("#")) continue;
+
+    // 高效分割键值
+    const sepIndex = line.indexOf("=");
+    if (sepIndex === -1) continue;
+
+    const key = line.slice(0, sepIndex).trim();
+    if (!key) continue;
+
+    // 处理值（包括引号）
+    let value = line.slice(sepIndex + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    // 根据覆盖规则设置环境变量
+    if (override || !(key in process.env)) {
+      process.env[key] = value;
+    }
+  }
+}
+export function loadEnv(path?: string | string[], options?: LoadEnvOptions) {
+  const paths = Array.isArray(path) ? path : [path || ".env"];
+  const cwd = options?.cwd || process.cwd();
+  const override = options?.override || false;
+  for (const p of paths) {
+    // 解析绝对路径
+    const absolutePath = isAbsolute(p) ? p : join(cwd, p);
+    if (!existsSync(absolutePath)) continue;
+    try {
+      if (override) loadSingleEnv(absolutePath, true);
+      else {
+        if (typeof process?.loadEnvFile === "function")
+          process.loadEnvFile(absolutePath);
+        else loadSingleEnv(absolutePath, false);
+      }
+    } catch (error) {
+      console.error(`[loadEnv] ${absolutePath}: ${(error as Error).message}`);
+    }
+  }
 }
