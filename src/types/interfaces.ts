@@ -102,7 +102,7 @@ export interface IConfig {
   /** API 路由全局前缀 */
   api_prefix: string;
   logger: {
-    level: "info" | "debug" | "warn" | "error" | "";
+    level: "info" | "debug" | "warn" | "error" | "http" | "verbose";
   };
   /** 数据库配置选项 */
   db: {
