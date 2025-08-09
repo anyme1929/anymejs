@@ -11,7 +11,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "rollup -c",
-    "start": "node dist/esm/index.js"
+    "start": "node dist/esm/index.js",
+    "prepublishOnly": "pnpm run build"
   },
   "license": "MIT",
   "keywords": ["express", "node", "typescript"],
@@ -21,7 +22,7 @@
     "url": "https://github.com/anyme1929/anymejs.git"
   },
   "packageManager": "pnpm@10.13.1",
-  "dependencies": {
+  "peerDependencies": {
     "@godaddy/terminus": "^4.12.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
