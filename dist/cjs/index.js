@@ -1,11 +1,2 @@
-'use strict';
-
-require('./env.js');
-var inversify_config = require('./inversify.config.js');
-var index = require('./utils/index.js');
-
-const ready = () => inversify_config.DI.getApp();
-
-exports.defineConfig = index.defineConfig;
-exports.ready = ready;
+"use strict";require("./env.js");var e=require("./inversify.config.js"),i=require("./utils/index.js");exports.defineConfig=i.defineConfig,exports.ready=()=>e.DI.getApp();
 //# sourceMappingURL=index.js.map

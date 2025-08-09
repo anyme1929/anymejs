@@ -3,7 +3,6 @@ import typescript from '@rollup/plugin-typescript';
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
 import json from '@rollup/plugin-json';
-import run from '@rollup/plugin-run';
 import terser from '@rollup/plugin-terser';
 import nodeExternals from 'rollup-plugin-node-externals';
 import dts from 'rollup-plugin-dts';
@@ -35,7 +34,8 @@ export default defineConfig([
             json(),
             typescript({
                 tsconfig: './tsconfig.json'
-            })
+            }),
+            terser()
         ]
     },
     {
@@ -67,7 +67,8 @@ export default defineConfig([
             json(),
             typescript({
                 tsconfig: './tsconfig.json'
-            })
+            }),
+            terser()
         ]
     },
     // 生成声明文件

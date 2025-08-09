@@ -1,10 +1,2 @@
-'use strict';
-
-var node_fs = require('node:fs');
-
-const node_env = process.env.NODE_ENV || "development";
-const isDev = node_env === "development";
-const envPath = isDev ? ".env.development" : ".env.production";
-if (node_fs.existsSync(envPath))
-    process.loadEnvFile(envPath);
+"use strict";var e=require("node:fs");const n="development"===(process.env.NODE_ENV||"development")?".env.development":".env.production";e.existsSync(n)&&process.loadEnvFile(n);
 //# sourceMappingURL=env.js.map

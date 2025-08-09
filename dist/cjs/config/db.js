@@ -1,17 +1,2 @@
-'use strict';
-
-var typeorm = require('typeorm');
-
-let dataSource = null;
-var CreateDataSource = (config) => {
-    const { enable, client } = config;
-    if (!enable)
-        return;
-    if (dataSource)
-        return dataSource;
-    dataSource = new typeorm.DataSource(client);
-    return dataSource;
-};
-
-module.exports = CreateDataSource;
+"use strict";var e=require("typeorm");let r=null;module.exports=t=>{const{enable:l,client:n}=t;if(l)return r||(r=new e.DataSource(n),r)};
 //# sourceMappingURL=db.js.map

@@ -1,18 +1,2 @@
-'use strict';
-
-var inversify = require('inversify');
-var constants = require('../types/constants.js');
-
-class InversifyAdapter {
-    constructor(container) {
-        this.container = container;
-    }
-    get(someClass, action) {
-        const child = new inversify.Container({ parent: this.container });
-        child.bind(constants.SYMBOLS.ClientIp).toConstantValue(action?.context.ip);
-        return child.get(someClass);
-    }
-}
-
-module.exports = InversifyAdapter;
+"use strict";var t=require("inversify"),e=require("../types/constants.js");module.exports=class{constructor(t){this.container=t}get(n,r){const s=new t.Container({parent:this.container});return s.bind(e.SYMBOLS.ClientIp).toConstantValue(r?.context.ip),s.get(n)}};
 //# sourceMappingURL=inversify-adapter.js.map

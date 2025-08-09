@@ -1,17 +1,2 @@
-'use strict';
-
-var ioredis = require('ioredis');
-
-let instance = null;
-var CreateRedis = (config) => {
-    const { enable, client } = config;
-    if (!enable)
-        return;
-    if (instance)
-        return instance;
-    instance = new ioredis.Redis(client);
-    return instance;
-};
-
-module.exports = CreateRedis;
+"use strict";var e=require("ioredis");let r=null;module.exports=i=>{const{enable:t,client:l}=i;if(t)return r||(r=new e.Redis(l),r)};
 //# sourceMappingURL=redis.js.map
