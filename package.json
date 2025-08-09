@@ -18,7 +18,7 @@
   "author": "656538470@qq.com",
   "repository": {  
     "type": "git",
-    "url": "https://github.com/你的仓库.git"
+    "url": "https://github.com/anyme1929/anymejs.git"
   },
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
