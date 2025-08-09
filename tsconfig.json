@@ -12,12 +12,7 @@
     "experimentalDecorators": true, // 启用实验性装饰器语法
     "emitDecoratorMetadata": true, // 为装饰器生成元数据
     "resolveJsonModule": true,
-    "removeComments": true,
-    "paths": {
-      // 路径映射配置
-      "@core/*": ["./src/*"],
-      "@core": ["./src/index"]
-    }
+    "removeComments": true
   },
   "ts-node": {
     "require": ["tsconfig-paths/register"],
