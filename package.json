@@ -18,7 +18,12 @@
   "keywords": [
     "express",
     "node",
-    "typescript"
+    "typescript",
+    "mysql",
+    "redis",
+    "routing-controllers",
+    "typeorm",
+    "inversify"
   ],
   "author": "656538470@qq.com",
   "repository": {
