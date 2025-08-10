@@ -11,6 +11,9 @@ export class CoreConfig {
     node_env: process.env.NODE_ENV || "development",
     is_dev: process.env.NODE_ENV === "development",
     api_prefix: process.env.API_PREFIX || "",
+    logger: {
+      level: "info",
+    },
     db: {
       enable: false,
       client: {
