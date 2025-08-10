@@ -13,6 +13,7 @@ export class CoreConfig {
     api_prefix: process.env.API_PREFIX || "",
     logger: {
       level: "info",
+      dir: "logs",
     },
     db: {
       enable: false,

@@ -103,6 +103,7 @@ export interface IConfig {
   api_prefix: string;
   logger: {
     level: "info" | "debug" | "warn" | "error" | "http" | "verbose";
+    dir: string;
   };
   /** 数据库配置选项 */
   db: {

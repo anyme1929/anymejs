@@ -33,7 +33,7 @@ export default class CreateServer implements ICreateServer {
     return this.pending;
   }
   /**
-   * 关闭服务器（可选实现，用于优雅退出）
+   * 关闭服务器
    * @returns 关闭完成的Promise
    */
   async close(): Promise<void> {

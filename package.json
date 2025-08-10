@@ -12,6 +12,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "rollup -c",
     "start": "node dist/esm/index.js",
+    "madge": "madge --circular --extensions ts ./src",
     "prepublishOnly": "pnpm run build"
   },
   "license": "MIT",
@@ -59,7 +60,7 @@
     "@types/express-session": "^1.18.2",
     "@types/morgan": "^1.9.10",
     "@types/node": "^24.2.1",
-    "nodemon": "^3.1.10",
+    "madge": "^8.0.0",
     "rollup": "^4.46.2",
     "rollup-plugin-dts": "^6.2.1",
     "rollup-plugin-node-externals": "^8.0.1",

@@ -34,6 +34,7 @@ export class App {
     @inject(SYMBOLS.Redis) private redis?: Redis
   ) {
     this.globalMiddlewares.init(this.app);
+    console.log(dataSource);
   }
   /**
    * 启动 HTTP 服务器，并在服务器成功启动或出错时进行相应处理。

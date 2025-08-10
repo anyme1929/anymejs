@@ -9,7 +9,7 @@ import {
   CreateDataSource,
   CreateRedis,
   CreateServer,
-  logger,
+  WinstonLogger,
   CreateSession,
 } from "./config";
 import {
@@ -19,19 +19,38 @@ import {
   SYMBOLS,
   IocAdapter,
   IGlobalMiddlewares,
+  ICreateSession,
+  DataSource,
+  IGracefulExit,
+  Redis,
 } from "./types";
-
+type AppProvider = (express?: Application) => Promise<App>;
 class DI {
   static container: Container = new Container();
   static register() {
+    // 0. 注册配置服务 getAsync 获取
     this.container
       .bind(SYMBOLS.Config)
       .toDynamicValue(async () => {
-        return await new CoreConfig().loadConfig();
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(new CoreConfig().loadConfig());
+          }, 3000);
+        });
       })
       .inSingletonScope();
-    // 1. 注册日志服务
-    this.container.bind(SYMBOLS.Logger).toConstantValue(logger);
+
+    // 1. 注册日志服务  getAsync 获取
+    this.container
+      .bind(SYMBOLS.Logger)
+      .toResolvedValue(
+        (config: IConfig) => {
+          const { logger } = config;
+          return new WinstonLogger(logger).logger;
+        },
+        [SYMBOLS.Config]
+      )
+      .inSingletonScope();
     // 2. 注册 IocAdapter 服务
     this.container
       .bind<IocAdapter>(SYMBOLS.IocAdapter)
@@ -48,7 +67,7 @@ class DI {
       )
       .inSingletonScope();
 
-    // 4. 注册 Redis 服务
+    // 4. 注册 Redis 服务  getAsync 获取
     this.container
       .bind(SYMBOLS.Redis)
       .toResolvedValue(
@@ -60,7 +79,7 @@ class DI {
       )
       .inSingletonScope();
 
-    // 5. 注册会话处理服务
+    // 5. 注册会话处理服务  getAsync 获取
     this.container
       .bind(SYMBOLS.CreateSession)
       .toResolvedValue(
@@ -72,7 +91,7 @@ class DI {
       )
       .inSingletonScope();
 
-    // 6. 注册服务器创建服务
+    // 6. 注册服务器创建服务 同步get
     this.container
       .bind<Provider<CreateServer>>(SYMBOLS.CreateServer)
       .toProvider((ctx) => {
@@ -85,7 +104,7 @@ class DI {
         };
       });
 
-    // 7. 注册优雅退出服务
+    // 7. 注册优雅退出服务  getAsync 获取
     this.container
       .bind(SYMBOLS.GracefulExit)
       .toResolvedValue(
@@ -93,15 +112,49 @@ class DI {
         [SYMBOLS.Logger]
       )
       .inSingletonScope();
-    // 8. 注册全局中间件服务
+    // 8. 注册全局中间件服务  同步get获取
     this.container
       .bind<IGlobalMiddlewares>(SYMBOLS.GlobalMiddlewares)
       .to(GlobalMiddlewares)
       .inSingletonScope();
     this.container.bind(SYMBOLS.App).to(App);
+    this.container.bind<Provider<App>>("App").toProvider((ctx) => {
+      let instance: App | undefined = undefined;
+      //TODO: 待传入EXPRESS实例
+      return async () => {
+        const config = await ctx.getAsync<IConfig>(SYMBOLS.Config);
+        const logger = ctx.get<Logger>(SYMBOLS.Logger);
+        const createServer = ctx.get<Provider<CreateServer>>(
+          SYMBOLS.CreateServer
+        );
+        const createSession = ctx.get<ICreateSession>(SYMBOLS.CreateSession);
+        const dataSource = ctx.get<DataSource>(SYMBOLS.DataSource);
+        const redis = ctx.get<Redis>(SYMBOLS.Redis);
+        const gracefulExit = ctx.get<IGracefulExit>(SYMBOLS.GracefulExit);
+        const globalMiddlewares = ctx.get<IGlobalMiddlewares>(
+          SYMBOLS.GlobalMiddlewares
+        );
+        if (!instance)
+          instance = new App(
+            config,
+            logger,
+            createSession,
+            createServer,
+            gracefulExit,
+            globalMiddlewares,
+            dataSource,
+            redis
+          );
+        return instance;
+      };
+    });
   }
-  static async getApp(): Promise<App> {
-    return await this.container.getAsync<App>(SYMBOLS.App);
+  static createApp(): () => Promise<App> {
+    return () => this.container.getAsync<App>(SYMBOLS.App);
+  }
+  static createExpress(express?: Application): Promise<App> {
+    const provider = this.container.get<AppProvider>("App");
+    return provider(express);
   }
 }
 DI.register();
