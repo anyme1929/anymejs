@@ -1,4 +1,3 @@
-import express, { urlencoded } from "express";
 import { injectable, inject } from "inversify";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -16,25 +15,23 @@ import {
   type IHandler,
   type RequestHandler,
   SYMBOLS,
-} from "./types";
+} from "../types";
 @injectable("Singleton")
 export class App {
-  app: Application = express();
   private server: Server | null = null;
   constructor(
-    @inject(SYMBOLS.Config) private config: IConfig,
-    @inject(SYMBOLS.Logger) private logger: Logger,
-    @inject(SYMBOLS.CreateSession) private createSession: ICreateSession,
-    @inject(SYMBOLS.CreateServer)
-    private serverFactory: (app: Application) => Promise<ICreateServer>,
-    @inject(SYMBOLS.GracefulExit) private gracefulExit: IGracefulExit,
-    @inject(SYMBOLS.GlobalMiddlewares)
+    private app: Application,
+    private config: IConfig,
+    private logger: Logger,
+    private createSession: ICreateSession,
+    private createServer: ICreateServer,
+    private gracefulExit: IGracefulExit,
     private globalMiddlewares: IGlobalMiddlewares,
     @inject(SYMBOLS.DataSource) private dataSource?: DataSource,
     @inject(SYMBOLS.Redis) private redis?: Redis
   ) {
-    this.globalMiddlewares.init(this.app);
-    console.log(dataSource);
+    this.globalMiddlewares.init(app);
+    this.createServer.init(this.app, this.config.router);
   }
   /**
    * 启动 HTTP 服务器，并在服务器成功启动或出错时进行相应处理。
@@ -46,8 +43,7 @@ export class App {
     const { config, logger, dataSource, redis } = this;
     try {
       await this.initialize();
-      const server = await this.serverFactory(this.app);
-      this.server = await server.bootstrap(port || config.port);
+      this.server = await this.createServer.bootstrap(port || config.port);
       //注册服务器退出处理逻辑，传入服务器实例、日志记录器、健康检查函数和资源关闭函数
       this.gracefulExit.register(this.server).setHealthCheck({
         "/health": async () => ({
@@ -131,10 +127,6 @@ export class App {
     }
   }
   private async cinfigGlobalMiddlewares() {
-    this.globalMiddlewares.register(
-      urlencoded({ extended: true }),
-      helmet(),
-      morgan("dev")
-    );
+    this.globalMiddlewares.register(helmet(), morgan("dev"));
   }
 }

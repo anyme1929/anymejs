@@ -97,8 +97,6 @@ export interface IConfig {
   port: number;
   /** Node.js 环境类型（如 'development'、'production'） */
   node_env: string;
-  /** 是否为开发环境 */
-  is_dev: boolean;
   /** API 路由全局前缀 */
   api_prefix: string;
   logger: {
@@ -177,6 +175,7 @@ export interface ICreateServer {
    * @param port 服务器监听的端口号
    * @returns 解析为 Server 实例的 Promise
    */
+  init(app: Application, config: IConfig["router"]): ICreateServer;
   bootstrap(port: number): Promise<Server>;
 }
 
@@ -203,8 +202,3 @@ export interface LoadEnvOptions {
   cwd?: string;
   override?: boolean;
 }
-// 新增类型工具
-export type DeepPartial<T> = {
-  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
-};
-export type userConfig = DeepPartial<IConfig>;

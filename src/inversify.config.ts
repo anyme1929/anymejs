@@ -1,6 +1,6 @@
 import "reflect-metadata";
-import { CoreConfig } from "./core.config";
-import { App } from "./app";
+import { CoreConfig } from "./config";
+import { App } from "./core/app";
 import GracefulExit from "./utils/graceful-exit";
 import InversifyAdapter from "./utils/inversify-adapter";
 import GlobalMiddlewares from "./utils/global-middlewares";
@@ -11,7 +11,7 @@ import {
   CreateServer,
   WinstonLogger,
   CreateSession,
-} from "./config";
+} from "./core";
 import {
   Application,
   Logger,
@@ -20,9 +20,8 @@ import {
   IocAdapter,
   IGlobalMiddlewares,
   ICreateSession,
-  DataSource,
   IGracefulExit,
-  Redis,
+  ICreateServer,
 } from "./types";
 type AppProvider = (express?: Application) => Promise<App>;
 class DI {
@@ -31,13 +30,7 @@ class DI {
     // 0. 注册配置服务 getAsync 获取
     this.container
       .bind(SYMBOLS.Config)
-      .toDynamicValue(async () => {
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            resolve(new CoreConfig().loadConfig());
-          }, 3000);
-        });
-      })
+      .toDynamicValue(async () => await new CoreConfig().load())
       .inSingletonScope();
 
     // 1. 注册日志服务  getAsync 获取
@@ -91,18 +84,16 @@ class DI {
       )
       .inSingletonScope();
 
-    // 6. 注册服务器创建服务 同步get
+    // 6. 注册服务器创建服务
     this.container
-      .bind<Provider<CreateServer>>(SYMBOLS.CreateServer)
-      .toProvider((ctx) => {
-        let instance: CreateServer | undefined = undefined;
-        const iocAdapter = ctx.get<IocAdapter>(SYMBOLS.IocAdapter);
-        return async (app: Application) => {
-          const { router } = await ctx.getAsync<IConfig>(SYMBOLS.Config);
-          if (!instance) instance = new CreateServer(router, iocAdapter, app);
-          return instance;
-        };
-      });
+      .bind<CreateServer>(SYMBOLS.CreateServer)
+      .toResolvedValue(
+        (iocAdapter: IocAdapter) => {
+          return new CreateServer(iocAdapter);
+        },
+        [SYMBOLS.IocAdapter]
+      )
+      .inSingletonScope();
 
     // 7. 注册优雅退出服务  getAsync 获取
     this.container
@@ -117,33 +108,32 @@ class DI {
       .bind<IGlobalMiddlewares>(SYMBOLS.GlobalMiddlewares)
       .to(GlobalMiddlewares)
       .inSingletonScope();
-    this.container.bind(SYMBOLS.App).to(App);
-    this.container.bind<Provider<App>>("App").toProvider((ctx) => {
+    //this.container.bind(SYMBOLS.App).to(App);
+    this.container.bind<Provider<App>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: App | undefined = undefined;
       //TODO: 待传入EXPRESS实例
-      return async () => {
+      return async (express: Application) => {
         const config = await ctx.getAsync<IConfig>(SYMBOLS.Config);
-        const logger = ctx.get<Logger>(SYMBOLS.Logger);
-        const createServer = ctx.get<Provider<CreateServer>>(
-          SYMBOLS.CreateServer
+        const logger = await ctx.getAsync<Logger>(SYMBOLS.Logger);
+        const createSession = await ctx.getAsync<ICreateSession>(
+          SYMBOLS.CreateSession
         );
-        const createSession = ctx.get<ICreateSession>(SYMBOLS.CreateSession);
-        const dataSource = ctx.get<DataSource>(SYMBOLS.DataSource);
-        const redis = ctx.get<Redis>(SYMBOLS.Redis);
-        const gracefulExit = ctx.get<IGracefulExit>(SYMBOLS.GracefulExit);
+        const gracefulExit = await ctx.getAsync<IGracefulExit>(
+          SYMBOLS.GracefulExit
+        );
+        const createServer = ctx.get<ICreateServer>(SYMBOLS.CreateServer);
         const globalMiddlewares = ctx.get<IGlobalMiddlewares>(
           SYMBOLS.GlobalMiddlewares
         );
         if (!instance)
           instance = new App(
+            express,
             config,
             logger,
             createSession,
             createServer,
             gracefulExit,
-            globalMiddlewares,
-            dataSource,
-            redis
+            globalMiddlewares
           );
         return instance;
       };
@@ -152,9 +142,11 @@ class DI {
   static createApp(): () => Promise<App> {
     return () => this.container.getAsync<App>(SYMBOLS.App);
   }
-  static createExpress(express?: Application): Promise<App> {
-    const provider = this.container.get<AppProvider>("App");
-    return provider(express);
+  static createExpress = (express: Application): Promise<App> => {
+    return this.container.get<AppProvider>(SYMBOLS.App)(express);
+  };
+  get logger(): Promise<Logger> {
+    return DI.container.getAsync<Logger>(SYMBOLS.Logger);
   }
 }
 DI.register();

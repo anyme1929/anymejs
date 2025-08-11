@@ -15,3 +15,4 @@ export const SYMBOLS = {
   IocAdapter: Symbol.for("IocAdapter"),
   GlobalMiddlewares: Symbol.for("GlobalMiddlewares"),
 };
+export const CONFIG_PATH = "./config";

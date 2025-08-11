@@ -55,9 +55,7 @@ export default class WinstonLogger {
       }),
     ],
   });
-  constructor(config: LoggerConfig) {
-    console.log(config);
-  }
+  constructor(config: LoggerConfig) {}
   get logger() {
     return this._logger;
   }

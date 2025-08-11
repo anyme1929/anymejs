@@ -10,21 +10,28 @@ import {
   ICreateServer,
 } from "../types";
 export default class CreateServer implements ICreateServer {
+  private app: Application | null = null;
   private server: Server | null = null;
   private pending: Promise<Server> | null = null;
-  constructor(
-    config: RoutingControllersOptions,
-    iocAdapter: IocAdapter,
-    private app: Application
-  ) {
+  constructor(iocAdapter: IocAdapter) {
     useContainer(iocAdapter);
-    this.app = useExpressServer(app, config);
   }
+  init(app: Application, config: RoutingControllersOptions) {
+    if (this.app) return this;
+    this.app = useExpressServer(app, config);
+    return this;
+  }
+  /**
+   * 启动服务器
+   * @param port 服务器监听的端口号
+   * @returns 服务器实例的Promise
+   */
   async bootstrap(port: number): Promise<Server> {
+    if (!this.app) throw new Error("Server not initialized");
     if (this.pending) return this.pending;
     this.pending = new Promise<Server>((resolve, reject) => {
       if (this.server?.listening) throw new Error("Server already running");
-      this.server = this.app.listen(port, (error) => {
+      this.server = this.app!.listen(port, (error) => {
         if (error) reject(error);
         else resolve(this.server!);
         this.pending = null;
