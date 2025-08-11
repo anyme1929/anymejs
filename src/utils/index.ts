@@ -114,6 +114,9 @@ export function loadEnv(path?: string | string[], options?: LoadEnvOptions) {
 }
 // 密钥验证函数 - 确保密钥符合AES-256要求
 function validateKey(key: string): Buffer {
+  if (typeof key !== "string") {
+    throw new TypeError("密钥必须是字符串类型");
+  }
   const keyBuffer = Buffer.from(key);
   if (keyBuffer.length !== 32) {
     throw new Error(
@@ -133,10 +136,8 @@ export function encrypt(text: string, key: string): string {
     const keyBuffer = validateKey(key);
     const iv = randomBytes(IV_LENGTH);
     const cipher = createCipheriv("aes-256-cbc", keyBuffer, iv);
-
     let encrypted = cipher.update(text, "utf8");
     encrypted = Buffer.concat([encrypted, cipher.final()]);
-
     // 返回IV和加密数据的十六进制拼接
     return `${iv.toString("hex")}:${encrypted.toString("hex")}`;
   } catch (error) {
@@ -165,7 +166,6 @@ export function decrypt(encryptedText: string, key: string): string {
         'Invalid encrypted text format. Expected "iv:encryptedData"'
       );
     }
-
     const iv = Buffer.from(ivHex, "hex");
     // 验证IV长度
     if (iv.length !== IV_LENGTH) {
@@ -173,13 +173,10 @@ export function decrypt(encryptedText: string, key: string): string {
         `Invalid IV length: ${iv.length} bytes. Expected ${IV_LENGTH} bytes.`
       );
     }
-
     const encrypted = Buffer.from(encryptedHex, "hex");
     const decipher = createDecipheriv("aes-256-cbc", keyBuffer, iv);
-
     let decrypted = decipher.update(encrypted);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
-
     return decrypted.toString("utf8");
   } catch (error) {
     console.error(
