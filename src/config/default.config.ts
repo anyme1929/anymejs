@@ -3,7 +3,6 @@ import { IConfig } from "../types";
 export default {
   public_path: "public",
   port: parseInt(process.env.PORT || "3000"),
-  node_env: process.env.NODE_ENV || "development",
   api_prefix: process.env.API_PREFIX || "",
   logger: {
     level: "info",

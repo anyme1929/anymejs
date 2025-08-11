@@ -22,6 +22,8 @@ import {
   ICreateSession,
   IGracefulExit,
   ICreateServer,
+  DataSource,
+  Redis,
 } from "./types";
 type AppProvider = (express?: Application) => Promise<App>;
 class DI {
@@ -125,6 +127,10 @@ class DI {
         const globalMiddlewares = ctx.get<IGlobalMiddlewares>(
           SYMBOLS.GlobalMiddlewares
         );
+        const dataSource = await ctx.getAsync<DataSource | undefined>(
+          SYMBOLS.DataSource
+        );
+        const redis = await ctx.getAsync<Redis | undefined>(SYMBOLS.Redis);
         if (!instance)
           instance = new App(
             express,
@@ -133,7 +139,9 @@ class DI {
             createSession,
             createServer,
             gracefulExit,
-            globalMiddlewares
+            globalMiddlewares,
+            dataSource,
+            redis
           );
         return instance;
       };

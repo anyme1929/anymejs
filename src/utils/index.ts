@@ -1,6 +1,18 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, isAbsolute } from "node:path";
-import type { DeepPartial, userConfig, LoadEnvOptions } from "../types";
+import {
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+  randomUUID,
+} from "node:crypto";
+import {
+  type DeepPartial,
+  type userConfig,
+  type LoadEnvOptions,
+  IV_LENGTH,
+} from "../types";
+import { get } from "node:http";
 export function isObject(obj: unknown): obj is Record<string, unknown> {
   return (
     typeof obj === "object" &&
@@ -99,4 +111,88 @@ export function loadEnv(path?: string | string[], options?: LoadEnvOptions) {
       console.error(`[loadEnv] ${absolutePath}: ${(error as Error).message}`);
     }
   }
+}
+// 密钥验证函数 - 确保密钥符合AES-256要求
+function validateKey(key: string): Buffer {
+  const keyBuffer = Buffer.from(key);
+  if (keyBuffer.length !== 32) {
+    throw new Error(
+      `Invalid encryption key length: ${keyBuffer.length} bytes. Expected 32 bytes for AES-256.`
+    );
+  }
+  return keyBuffer;
+}
+/**
+ * 使用AES-256-CBC算法加密文本
+ * @param text 待加密的明文
+ * @param key 32字节的加密密钥
+ * @returns 加密后的字符串，格式为"iv:encryptedData"
+ */
+export function encrypt(text: string, key: string): string {
+  try {
+    const keyBuffer = validateKey(key);
+    const iv = randomBytes(IV_LENGTH);
+    const cipher = createCipheriv("aes-256-cbc", keyBuffer, iv);
+
+    let encrypted = cipher.update(text, "utf8");
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+
+    // 返回IV和加密数据的十六进制拼接
+    return `${iv.toString("hex")}:${encrypted.toString("hex")}`;
+  } catch (error) {
+    console.error(
+      "Encryption failed:",
+      error instanceof Error ? error.message : String(error)
+    );
+    throw error;
+  }
+}
+
+/**
+ * 使用AES-256-CBC算法解密密文
+ * @param encryptedText 加密后的字符串，格式为"iv:encryptedData"
+ * @param key 32字节的解密密钥（需与加密密钥相同）
+ * @returns 解密后的明文
+ */
+export function decrypt(encryptedText: string, key: string): string {
+  try {
+    const keyBuffer = validateKey(key);
+    const [ivHex, encryptedHex] = encryptedText.split(":");
+
+    // 验证加密文本格式
+    if (!ivHex || !encryptedHex) {
+      throw new Error(
+        'Invalid encrypted text format. Expected "iv:encryptedData"'
+      );
+    }
+
+    const iv = Buffer.from(ivHex, "hex");
+    // 验证IV长度
+    if (iv.length !== IV_LENGTH) {
+      throw new Error(
+        `Invalid IV length: ${iv.length} bytes. Expected ${IV_LENGTH} bytes.`
+      );
+    }
+
+    const encrypted = Buffer.from(encryptedHex, "hex");
+    const decipher = createDecipheriv("aes-256-cbc", keyBuffer, iv);
+
+    let decrypted = decipher.update(encrypted);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+    return decrypted.toString("utf8");
+  } catch (error) {
+    console.error(
+      "Decryption failed:",
+      error instanceof Error ? error.message : String(error)
+    );
+    throw error;
+  }
+}
+
+export function getEncryptionKey() {
+  return process.env.ENCRYPT_KEY || "default-anymejs-unsafe-key";
+}
+export function ENC(encryptedText: string) {
+  return decrypt(encryptedText, getEncryptionKey());
 }

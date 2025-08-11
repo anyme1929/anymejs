@@ -27,8 +27,8 @@ export class App {
     private createServer: ICreateServer,
     private gracefulExit: IGracefulExit,
     private globalMiddlewares: IGlobalMiddlewares,
-    @inject(SYMBOLS.DataSource) private dataSource?: DataSource,
-    @inject(SYMBOLS.Redis) private redis?: Redis
+    private dataSource?: DataSource,
+    private redis?: Redis
   ) {
     this.globalMiddlewares.init(app);
     this.createServer.init(this.app, this.config.router);

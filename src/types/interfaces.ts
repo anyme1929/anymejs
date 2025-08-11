@@ -95,8 +95,6 @@ export interface IConfig {
   public_path: string;
   /** 应用监听端口号 */
   port: number;
-  /** Node.js 环境类型（如 'development'、'production'） */
-  node_env: string;
   /** API 路由全局前缀 */
   api_prefix: string;
   logger: {
