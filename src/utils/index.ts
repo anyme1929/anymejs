@@ -4,15 +4,15 @@ import {
   randomBytes,
   createCipheriv,
   createDecipheriv,
-  randomUUID,
+  createHash,
 } from "node:crypto";
 import {
   type DeepPartial,
   type userConfig,
   type LoadEnvOptions,
   IV_LENGTH,
+  ENC_DEFAULT_KEY,
 } from "../types";
-import { get } from "node:http";
 export function isObject(obj: unknown): obj is Record<string, unknown> {
   return (
     typeof obj === "object" &&
@@ -112,18 +112,16 @@ export function loadEnv(path?: string | string[], options?: LoadEnvOptions) {
     }
   }
 }
-// 密钥验证函数 - 确保密钥符合AES-256要求
+/**
+ * 验证并处理加密密钥
+ * 如果密钥长度为32字节则直接使用，否则使用SHA-256哈希算法处理成32字节
+ * @param key - 原始密钥字符串
+ * @returns 32字节长度的密钥Buffer
+ */
 function validateKey(key: string): Buffer {
-  if (typeof key !== "string") {
-    throw new TypeError("密钥必须是字符串类型");
-  }
   const keyBuffer = Buffer.from(key);
-  if (keyBuffer.length !== 32) {
-    throw new Error(
-      `Invalid encryption key length: ${keyBuffer.length} bytes. Expected 32 bytes for AES-256.`
-    );
-  }
-  return keyBuffer;
+  if (keyBuffer.length === 32) return keyBuffer;
+  return createHash("sha256").update(key).digest();
 }
 /**
  * 使用AES-256-CBC算法加密文本
@@ -188,8 +186,8 @@ export function decrypt(encryptedText: string, key: string): string {
 }
 
 export function getEncryptionKey() {
-  return process.env.ENCRYPT_KEY || "default-anymejs-unsafe-key";
+  return process.env.ENCRYPT_KEY || ENC_DEFAULT_KEY;
 }
-export function ENC(encryptedText: string) {
-  return decrypt(encryptedText, getEncryptionKey());
+export function ENC(text: string) {
+  return decrypt(text, getEncryptionKey());
 }

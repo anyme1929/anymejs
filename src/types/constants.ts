@@ -16,3 +16,4 @@ export const SYMBOLS = {
   GlobalMiddlewares: Symbol.for("GlobalMiddlewares"),
 };
 export const IV_LENGTH = 16;
+export const ENC_DEFAULT_KEY = "default-anymejs-unsafe-key";

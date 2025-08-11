@@ -4,7 +4,13 @@ import { extname, basename, join } from "node:path";
 import { readFileSync } from "node:fs";
 import fg from "fast-glob";
 import { type IConfig, type userConfig } from "../types";
-import { deepMerge, isEmpty } from "../utils";
+import {
+  deepMerge,
+  isEmpty,
+  encrypt,
+  getEncryptionKey,
+  decrypt,
+} from "../utils";
 export class CoreConfig {
   #config: IConfig = config;
   private path: string = process.env.CONFIG_PATH || "./config";
@@ -19,6 +25,7 @@ export class CoreConfig {
   async load(): Promise<IConfig> {
     const files = await this.loadConfigFiles();
     if (!isEmpty(files)) await this.setConfig(...files);
+    console.log(this.#config.db);
     return this.#config;
   }
   private async loadConfigFiles() {
