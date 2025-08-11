@@ -4,13 +4,7 @@ import { extname, basename, join } from "node:path";
 import { readFileSync } from "node:fs";
 import fg from "fast-glob";
 import { type IConfig, type userConfig } from "../types";
-import {
-  deepMerge,
-  isEmpty,
-  encrypt,
-  getEncryptionKey,
-  decrypt,
-} from "../utils";
+import { deepMerge, isEmpty } from "../utils";
 export class CoreConfig {
   #config: IConfig = config;
   private path: string = process.env.CONFIG_PATH || "./config";
@@ -25,7 +19,7 @@ export class CoreConfig {
   async load(): Promise<IConfig> {
     const files = await this.loadConfigFiles();
     if (!isEmpty(files)) await this.setConfig(...files);
-    console.log(this.#config.db);
+    this.validate();
     return this.#config;
   }
   private async loadConfigFiles() {
@@ -112,21 +106,19 @@ export class CoreConfig {
     if (!this.#config.session?.client?.secret) {
       console.warn("⚠️ Session secret is not set. Using fallback value");
     }
-
     // 开发环境特定检查
     if (this.env === "development") {
-      if (this.#config.db?.client?.synchronize) {
-        console.warn(
-          "⚠️ Database synchronization is enabled in development mode"
-        );
-      }
     }
-
     // 生产环境强制设置
     if (this.env === "production") {
       if (this.#config.session?.client?.cookie?.secure !== true) {
         console.warn("⚠️ Forcing secure cookies in production environment");
         this.#config.session!.client!.cookie!.secure = true;
+      }
+      if (this.#config.db?.client?.synchronize) {
+        console.warn(
+          "⚠️ Database synchronization is enabled in production environment"
+        );
       }
     }
   }
