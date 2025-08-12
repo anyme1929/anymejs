@@ -74,8 +74,8 @@ SESSION_SECRET="session"
 //config/default.config.ts
 import { defineConfig } from "@anyme/anymejs";
 const config = defineConfig({
-  public_path: "public",
   port: 3000,
+  public_path: "public",
   api_prefix: "",
   logger: {
     level: "info",
@@ -141,15 +141,6 @@ const config = defineConfig({
     controllers: [resolve("src/controllers/**/*{.ts,.js}")],
     middlewares: [resolve("src/middlewares/**/*{.ts,.js}")],
     interceptors: [resolve("src/interceptors/**/*{.ts,.js}")],
-  },
-  https: {
-    //HTTPS配置
-    enable: false,
-    options: {
-      port: 443,
-      key: path.resolve(process.env.HTTPS_KEY || "key.pem"),
-      cert: path.resolve(process.env.HTTPS_CERT || "cert.pem"),
-    },
   },
 });
 ```

@@ -185,3 +185,16 @@ export function decrypt(encryptedText: string, key: string): string {
 export function ENC(text: string) {
   return decrypt(text, getEncryptionKey());
 }
+export function createNestedObject(str: string, value: any) {
+  const keys = str.trim().split(".");
+  const result = {};
+  let current: Record<string, unknown> = result;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!current[key]) current[key] = {};
+    current = current[key] as Record<string, unknown>;
+  }
+  const lastKey = keys[keys.length - 1];
+  current[lastKey] = value;
+  return result;
+}
