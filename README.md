@@ -29,7 +29,9 @@ pnpm add @anyme/anymejs
 # 使用 yarn
 yarn add @anyme/anymejs
 ```
+
 ### 基本使用
+
 ```ts
 //index.ts
 import express from "express";
@@ -39,8 +41,11 @@ createApp(express()).then((app) => {
   app.bootstrap();
 });
 ```
+
 ### 配置
+
 #### 项目支持通过环境变量或 .env 文件进行配置。默认配置如下：
+
 ```
 # 服务器配置
 PORT=3000
@@ -62,7 +67,9 @@ REDIS_DB=0
 # Session 配置
 SESSION_SECRET="session"
 ```
+
 #### 你也可以通过代码进行配置：
+
 ```ts
 //config/default.config.ts
 import { defineConfig } from "@anyme/anymejs";
@@ -74,7 +81,8 @@ const config = defineConfig({
     level: "info",
     dir: "logs",
   },
-  db: {//数据库配置
+  db: {
+    //数据库配置
     enable: false,
     client: {
       type: "mysql",
@@ -90,7 +98,8 @@ const config = defineConfig({
       logging: process.env.NODE_ENV === "development",
     },
   },
-  redis: {//Redis配置
+  redis: {
+    //Redis配置
     enable: false,
     client: {
       name: "mymaster",
@@ -105,7 +114,8 @@ const config = defineConfig({
       ],
     },
   },
-  session: {//Session配置
+  session: {
+    //Session配置
     enable: true,
     prefix: "session:",
     type: "memory",
@@ -120,7 +130,8 @@ const config = defineConfig({
       },
     },
   },
-  router: {//路由配置
+  router: {
+    //路由配置
     cors: {
       origin: "*",
       methods: "GET,POST,PUT,DELETE,OPTIONS",
@@ -131,7 +142,8 @@ const config = defineConfig({
     middlewares: [resolve("src/middlewares/**/*{.ts,.js}")],
     interceptors: [resolve("src/interceptors/**/*{.ts,.js}")],
   },
-  https: {//HTTPS配置
+  https: {
+    //HTTPS配置
     enable: false,
     options: {
       port: 443,
@@ -141,15 +153,21 @@ const config = defineConfig({
   },
 });
 ```
-#### 或者在config/default.config.json
+
+#### 或者在 config/default.config.json
+
 ```json
 {
   "port": 3000
 }
 ```
+
 #### 配置优先级：环境变量 > 项目配置 > 默认配置
+
 #### 配置文件优先级：local/prod > default
+
 ### 项目结构
+
 ```
 src/
 ├── config/          # 配置文件
@@ -162,7 +180,6 @@ src/
 ├── utils/           # 工具函数
 └── index.ts         # 入口文件
 ```
-### 核心依赖
 
 ### 核心依赖
 
@@ -175,4 +192,5 @@ src/
 - Routing-controllers 路由控制
 
 ## 许可证
+
 MIT

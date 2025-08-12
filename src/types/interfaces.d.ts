@@ -5,88 +5,9 @@ import { type RoutingControllersOptions } from "routing-controllers";
 import { type HealthCheckMap } from "@godaddy/terminus";
 import { type Application, type RequestHandler } from "express";
 import { type Redis } from "ioredis";
+import { type Logger, type Logform, type transports } from "winston";
+import { type DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import { type Server } from "node:http";
-// // 模拟请求对象类型
-// interface Request {
-//   method: string;
-//   url: string;
-//   headers: Record<string, string | string[] | undefined>;
-//   httpVersion: string;
-//   // 其他可能的属性
-//   connection?: any;
-//   socket?: any;
-// }
-
-// // 模拟响应对象类型
-// interface Response {
-//   statusCode: number;
-//   statusMessage?: string;
-//   headers: Record<string, string | string[] | undefined>;
-
-//   writeHead(statusCode: number, statusMessage?: string): void;
-//   writeHead(
-//     statusCode: number,
-//     headers?: Record<string, string | string[]>
-//   ): void;
-
-//   write(chunk: string | Buffer, encoding?: BufferEncoding): boolean;
-
-//   end(cb?: () => void): void;
-//   end(chunk: string | Buffer, cb?: () => void): void;
-//   end(chunk: string | Buffer, encoding?: BufferEncoding, cb?: () => void): void;
-
-//   setHeader(name: string, value: string | string[]): void;
-//   getHeader(name: string): string | string[] | undefined;
-//   removeHeader(name: string): void;
-// }
-
-// // 事件监听器类型
-// type ServerEventListener<Event extends keyof ServerEvents> =
-//   ServerEvents[Event] extends (...args: infer Args) => any
-//     ? (...args: Args) => void
-//     : never;
-
-// // 服务器事件类型映射
-// interface ServerEvents {
-//   request: (req: Request, res: Response) => void;
-//   connection: (socket: any) => void;
-//   close: () => void;
-//   error: (err: Error) => void;
-//   listening: () => void;
-// }
-
-// // 请求监听器类型
-// type RequestListener = (req: Request, res: Response) => void;
-// // 服务器接口类型
-// export interface Server {
-//   // 事件相关方法
-//   on<Event extends keyof ServerEvents>(
-//     event: Event,
-//     listener: ServerEventListener<Event>
-//   ): this;
-
-//   off<Event extends keyof ServerEvents>(
-//     event: Event,
-//     listener: ServerEventListener<Event>
-//   ): this;
-
-//   // 服务器控制方法
-//   listen(
-//     port: number,
-//     hostname?: string,
-//     backlog?: number,
-//     callback?: () => void
-//   ): this;
-//   listen(port: number, hostname?: string, callback?: () => void): this;
-//   listen(port: number, callback?: () => void): this;
-
-//   close(callback?: (err?: Error) => void): this;
-
-//   // 其他可能的属性和方法
-//   address(): { port: number; family: string; address: string } | null;
-//   maxHeadersCount: number | null;
-// }
-
 /**
  * 应用程序配置接口，包含所有可配置项
  */
@@ -99,7 +20,11 @@ export interface IConfig {
   api_prefix: string;
   logger: {
     level: "info" | "debug" | "warn" | "error" | "http" | "verbose";
-    dir: string;
+    format: Logform.Format;
+    transports: {
+      console: transports.ConsoleTransportOptions | false;
+      file: DailyRotateFileTransportOptions | false;
+    };
   };
   /** 数据库配置选项 */
   db: {

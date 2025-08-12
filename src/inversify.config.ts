@@ -68,11 +68,11 @@ class DI {
     this.container
       .bind(SYMBOLS.Redis)
       .toResolvedValue(
-        (config: IConfig) => {
+        (config: IConfig, logger: Logger) => {
           const { redis } = config;
-          return CreateRedis(redis);
+          return CreateRedis(redis, logger);
         },
-        [SYMBOLS.Config]
+        [SYMBOLS.Config, SYMBOLS.Logger]
       )
       .inSingletonScope();
 
