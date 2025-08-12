@@ -87,7 +87,6 @@ import { defineConfig } from "@anyme/anymejs";
 const config = defineConfig({
   port: 3000,
   public_path: "public",
-  api_prefix: "",
   logger: {
     level: "info",
   },

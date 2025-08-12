@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import { CoreConfig } from "./config";
 import { App } from "./core/app";
 import GracefulExit from "./utils/graceful-exit";
@@ -152,9 +151,6 @@ class DI {
   static createApp = (express: Application): Promise<App> => {
     return this.container.get<AppProvider>(SYMBOLS.App)(express);
   };
-  get logger(): Promise<Logger> {
-    return DI.container.getAsync<Logger>(SYMBOLS.Logger);
-  }
 }
 DI.register();
 export { DI };

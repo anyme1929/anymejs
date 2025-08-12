@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "Es2020", // 编译目标为ES2020
+    "target": "EsNext", // 编译目标为ES2020
     "module": "EsNext", // 使用CommonJS模块系统
-    "rootDir": "./src", // 源代码根目录
+    "rootDir": "./", // 源代码根目录
     "strict": true, // 启用所有严格类型检查
     "esModuleInterop": true, // 允许ES模块与CommonJS互操作
     "skipLibCheck": true, // 跳过声明文件类型检查
@@ -30,5 +30,5 @@
       "allowSyntheticDefaultImports": true
     }
   },
-  "include": ["src/**/*.ts", "import.ts"] // 包含的源文件路径
+  "include": ["**/*.ts", "import.ts"] // 包含的源文件路径
 }

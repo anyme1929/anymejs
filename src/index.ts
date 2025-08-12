@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import "./env";
 import { DI } from "./inversify.config";
 export { defineConfig, ENC } from "./utils";

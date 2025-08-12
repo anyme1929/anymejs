@@ -192,7 +192,6 @@ export function set(str: string, value: any) {
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
     if (!current[key]) current[key] = {};
-    console.log(current);
     current = current[key] as Record<string, unknown>;
   }
   const lastKey = keys[keys.length - 1];

@@ -1,4 +1,3 @@
-import helmet from "helmet";
 import morgan from "morgan";
 import type {
   IConfig,
@@ -29,11 +28,6 @@ export class App {
     private redis?: Redis
   ) {
     this.globalMiddlewares.init(app);
-    this.createServer.init(this.app, this.config.router);
-    this.app.get("/encrypt/:text", (req, res) => {
-      //encrypt(req.params, getEncryptionKey())
-      return res.send(encrypt(req.params.text, getEncryptionKey()));
-    });
   }
   /**
    * 启动 HTTP 服务器，并在服务器成功启动或出错时进行相应处理。
@@ -45,7 +39,12 @@ export class App {
     const { config, logger, dataSource, redis } = this;
     try {
       await this.initialize();
-      this.server = await this.createServer.bootstrap(port || config.port);
+      this.app.get("/encrypt/:text", (req, res) => {
+        return res.send(encrypt(req.params.text, getEncryptionKey()));
+      });
+      this.server = await this.createServer
+        .init(this.app, this.config.router)
+        .bootstrap(port || config.port);
       //注册服务器退出处理逻辑，传入服务器实例、日志记录器、健康检查函数和资源关闭函数
       this.gracefulExit.register(this.server, {
         healthCheck: {
@@ -70,12 +69,12 @@ export class App {
   }
   private async initialize() {
     try {
+      await this.configSession();
       await Promise.all([
         this.initDatabase(),
         this.initRedis(),
         this.cinfigGlobalMiddlewares(),
       ]);
-      await this.configSession();
     } catch (error) {
       this.logger.error("❌ Failed to initialize", error);
       throw error;
@@ -125,6 +124,7 @@ export class App {
       }
       const session = createSession.getHandler();
       globalMiddlewares.register(session);
+
       logger.info(`✅ Session set with ${type} store`);
     } catch (error) {
       logger.error("❌ Failed to config session:", error);
@@ -132,6 +132,6 @@ export class App {
     }
   }
   private async cinfigGlobalMiddlewares() {
-    this.globalMiddlewares.register(helmet(), morgan("dev"));
+    this.globalMiddlewares.register(morgan("dev"));
   }
 }

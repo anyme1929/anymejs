@@ -16,8 +16,6 @@ export interface IConfig {
   public_path: string;
   /** 应用监听端口号 */
   port: number;
-  /** API 路由全局前缀 */
-  api_prefix: string;
   logger: {
     level: "info" | "debug" | "warn" | "error" | "http" | "verbose";
     format: Logform.Format;
@@ -105,11 +103,6 @@ export interface ICreateSession {
   setRedis(prefix: string, redis: Redis): void;
 }
 
-export interface IDataSource {
-  isInitialized: boolean;
-  initialize(): Promise<void>;
-  destroy(): Promise<void>;
-}
 export interface IHandler {
   name: string;
   handle: RequestHandler;

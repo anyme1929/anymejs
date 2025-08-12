@@ -7,7 +7,7 @@ export const ENV_KEY_VALUES = [
     value: "PORT",
     type: "number",
   },
-  { key: "api_prefix", value: "API_PREFIX", type: "string" },
+  { key: "router.routePrefix", value: "API_PREFIX", type: "string" },
   { key: "logger.level", value: "LOG_LEVEL", type: "string" },
   { key: "db.client.host", value: "DB_HOST", type: "string" },
   {
@@ -57,7 +57,6 @@ export const ENV_KEY_VALUES = [
 export default {
   public_path: "public",
   port: 3000,
-  api_prefix: "",
   logger: {
     level: "info",
     format: format.combine(

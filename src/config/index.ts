@@ -102,7 +102,6 @@ export class CoreConfig {
     }
   }
   private async loadEnvConfig() {
-    console.log(this.#config.db);
     ENV_KEY_VALUES.forEach((item) => {
       if (process.env[item.value]) {
         if (item.type === "number")
