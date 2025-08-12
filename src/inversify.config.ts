@@ -28,7 +28,9 @@ import {
 type AppProvider = (express?: Application) => Promise<App>;
 class DI {
   static container: Container = new Container();
+  static registered = false;
   static register() {
+    if (this.registered) return;
     // 0. 注册配置服务 getAsync 获取
     this.container
       .bind(SYMBOLS.Config)
@@ -110,7 +112,6 @@ class DI {
       .bind<IGlobalMiddlewares>(SYMBOLS.GlobalMiddlewares)
       .to(GlobalMiddlewares)
       .inSingletonScope();
-    //this.container.bind(SYMBOLS.App).to(App);
     this.container.bind<Provider<App>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: App | undefined = undefined;
       //TODO: 待传入EXPRESS实例
@@ -146,11 +147,9 @@ class DI {
         return instance;
       };
     });
+    this.registered = true;
   }
-  static createApp(): () => Promise<App> {
-    return () => this.container.getAsync<App>(SYMBOLS.App);
-  }
-  static createExpress = (express: Application): Promise<App> => {
+  static createApp = (express: Application): Promise<App> => {
     return this.container.get<AppProvider>(SYMBOLS.App)(express);
   };
   get logger(): Promise<Logger> {

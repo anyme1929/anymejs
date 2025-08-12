@@ -121,7 +121,4 @@ export class CoreConfig {
       }
     }
   }
-  get config() {
-    return this.#config;
-  }
 }
