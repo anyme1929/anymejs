@@ -1,18 +1,18 @@
 import helmet from "helmet";
 import morgan from "morgan";
-import {
-  type IConfig,
-  type DataSource,
-  type Redis,
-  type Server,
-  type Application,
-  type ICreateServer,
-  type IGracefulExit,
-  type ICreateSession,
-  type IGlobalMiddlewares,
-  type Logger,
-  type IHandler,
-  type RequestHandler,
+import type {
+  IConfig,
+  DataSource,
+  Redis,
+  Server,
+  Application,
+  ICreateServer,
+  IGracefulExit,
+  ICreateSession,
+  IGlobalMiddlewares,
+  Logger,
+  IHandler,
+  RequestHandler,
 } from "../types";
 export class App {
   private server: Server | null = null;

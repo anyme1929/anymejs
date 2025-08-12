@@ -12,11 +12,10 @@ import {
   WinstonLogger,
   CreateSession,
 } from "./core";
-import {
+import type {
   Application,
   Logger,
   IConfig,
-  SYMBOLS,
   IocAdapter,
   IGlobalMiddlewares,
   ICreateSession,
@@ -25,6 +24,7 @@ import {
   DataSource,
   Redis,
 } from "./types";
+import { SYMBOLS } from "./utils/constants";
 type AppProvider = (express?: Application) => Promise<App>;
 class DI {
   static container: Container = new Container();

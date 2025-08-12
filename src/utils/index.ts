@@ -6,13 +6,8 @@ import {
   createDecipheriv,
   createHash,
 } from "node:crypto";
-import {
-  type DeepPartial,
-  type userConfig,
-  type LoadEnvOptions,
-  IV_LENGTH,
-  ENC_DEFAULT_KEY,
-} from "../types";
+import type { DeepPartial, UserConfig, LoadEnvOptions } from "../types";
+import { ENC_DEFAULT_KEY, IV_LENGTH } from "./constants";
 export function isObject(obj: unknown): obj is Record<string, unknown> {
   return (
     typeof obj === "object" &&
@@ -60,7 +55,7 @@ export function isEmpty<T>(value: T) {
   // 其他类型（如数字、布尔值等）视为非空
   return false;
 }
-export function defineConfig(config: userConfig): userConfig {
+export function defineConfig(config: UserConfig): UserConfig {
   return config;
 }
 // 专用文件加载函数

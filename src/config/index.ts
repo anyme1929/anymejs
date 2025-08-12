@@ -3,7 +3,7 @@ import { pathToFileURL } from "node:url";
 import { extname, basename, join } from "node:path";
 import { readFile } from "node:fs/promises";
 import fg from "fast-glob";
-import { type IConfig, type userConfig } from "../types";
+import { type IConfig, type UserConfig } from "../types";
 import { deepMerge, isEmpty } from "../utils";
 export class CoreConfig {
   #config: IConfig = config;
@@ -80,7 +80,7 @@ export class CoreConfig {
       throw error;
     }
   }
-  private async resolve(path: string): Promise<userConfig> {
+  private async resolve(path: string): Promise<UserConfig> {
     if (extname(path) === ".json")
       try {
         return JSON.parse(await readFile(path, "utf-8"));
