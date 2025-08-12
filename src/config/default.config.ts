@@ -1,6 +1,59 @@
 import { resolve } from "node:path";
 import { format } from "winston";
 import { IConfig } from "../types";
+export const ENV_KEY_VALUES = [
+  {
+    key: "port",
+    value: "PORT",
+    type: "number",
+  },
+  { key: "api_prefix", value: "API_PREFIX", type: "string" },
+  { key: "logger.level", value: "LOG_LEVEL", type: "string" },
+  { key: "db.client.host", value: "DB_HOST", type: "string" },
+  {
+    key: "db.client.port",
+    value: "DB_PORT",
+    type: "number",
+  },
+  { key: "db.client.username", value: "DB_USER", type: "string" },
+  { key: "db.client.password", value: "DB_PASSWORD", type: "string" },
+  { key: "db.client.database", value: "DB_DATABASE", type: "string" },
+  { key: "redis.client.name", value: "REDIS_MASTER_NAME", type: "string" },
+  { key: "redis.client.username", value: "REDIS_USERNAME", type: "string" },
+  { key: "redis.client.host", value: "REDIS_HOST", type: "string" },
+  {
+    key: "redis.client.port",
+    value: "REDIS_PORT",
+    type: "number",
+  },
+  { key: "redis.client.password", value: "REDIS_PASSWORD", type: "string" },
+  {
+    key: "redis.client.password",
+    value: "REDIS_DATABASE",
+    type: "string",
+  },
+  { key: "session.client.secret", value: "SESSION_SECRET", type: "string" },
+  {
+    key: "session.client.cookie.secure",
+    value: "SESSION_PREFIX",
+    type: "string",
+  },
+  {
+    key: "https.options.port",
+    value: "HTTPS_PORT",
+    type: "number",
+  },
+  {
+    key: "https.options.key",
+    value: "HTTPS_KEY",
+    type: "resolve",
+  },
+  {
+    key: "https.options.cert",
+    value: "HTTPS_KEY",
+    type: "resolve",
+  },
+];
 export default {
   public_path: "public",
   port: 3000,
