@@ -1,7 +1,7 @@
 import config from "./default.config";
 import { pathToFileURL } from "node:url";
 import { extname, basename, join } from "node:path";
-import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import fg from "fast-glob";
 import { type IConfig, type userConfig } from "../types";
 import { deepMerge, isEmpty } from "../utils";
@@ -18,7 +18,7 @@ export class CoreConfig {
   };
   async load(): Promise<IConfig> {
     const files = await this.loadConfigFiles();
-    if (!isEmpty(files)) await this.setConfig(...files);
+    if (!isEmpty(files)) await this.loadConfig(...files);
     this.validate();
     return this.#config;
   }
@@ -40,9 +40,9 @@ export class CoreConfig {
         fileGroups.get(matched)!.push(file);
       }
     }
-    return this.sortByPriority(fileGroups, keywords);
+    return this.sortFiles(fileGroups, keywords);
   }
-  private sortByPriority(
+  private sortFiles(
     fileGroups: Map<string, string[]>,
     keywords: string[] = []
   ) {
@@ -69,13 +69,12 @@ export class CoreConfig {
     const ext = this.order.join(",");
     return join(this.path, `*.config{${ext}}`).replace(/\\/g, "/");
   }
-  private async setConfig(...paths: string[]) {
+  private async loadConfig(...paths: string[]) {
     try {
-      let configs: userConfig[] = [];
-      for (const path of paths) {
-        const config = await this.resolve(path);
-        if (!isEmpty(config)) configs.push(config);
-      }
+      const promises = paths.map((path) => this.resolve(path));
+      const configs = (await Promise.all(promises)).filter(
+        (config) => !isEmpty(config)
+      );
       this.#config = deepMerge(this.#config, ...configs);
     } catch (error) {
       throw error;
@@ -84,7 +83,7 @@ export class CoreConfig {
   private async resolve(path: string): Promise<userConfig> {
     if (extname(path) === ".json")
       try {
-        return JSON.parse(readFileSync(path, "utf-8"));
+        return JSON.parse(await readFile(path, "utf-8"));
       } catch (error) {
         console.error(`Failed to parse JSON config at ${path}:`, error);
         return {};
@@ -104,21 +103,21 @@ export class CoreConfig {
   private validate(): void {
     // 验证必要配置项
     if (!this.#config.session?.client?.secret) {
-      console.warn("⚠️ Session secret is not set. Using fallback value");
-    }
-    // 开发环境特定检查
-    if (this.env === "development") {
+      console.warn("⚠️ Session secret is not set.");
     }
     // 生产环境强制设置
     if (this.env === "production") {
-      if (this.#config.session?.client?.cookie?.secure !== true) {
-        console.warn("⚠️ Forcing secure cookies in production environment");
-        this.#config.session!.client!.cookie!.secure = true;
+      if (this.#config.session?.enable) {
+        if (!this.#config.session?.client?.cookie?.secure) {
+          console.warn("⚠️ Forcing secure cookies in production environment");
+        }
       }
-      if (this.#config.db?.client?.synchronize) {
-        console.warn(
-          "⚠️ Database synchronization is enabled in production environment"
-        );
+      if (this.#config.db?.enable) {
+        if (this.#config.db?.client?.synchronize) {
+          console.warn(
+            "⚠️ Database synchronization is enabled in production environment"
+          );
+        }
       }
     }
   }

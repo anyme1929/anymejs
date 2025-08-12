@@ -123,6 +123,9 @@ function validateKey(key: string): Buffer {
   if (keyBuffer.length === 32) return keyBuffer;
   return createHash("sha256").update(key).digest();
 }
+export function getEncryptionKey() {
+  return process.env.ENCRYPT_KEY || ENC_DEFAULT_KEY;
+}
 /**
  * 使用AES-256-CBC算法加密文本
  * @param text 待加密的明文
@@ -183,10 +186,6 @@ export function decrypt(encryptedText: string, key: string): string {
     );
     throw error;
   }
-}
-
-export function getEncryptionKey() {
-  return process.env.ENCRYPT_KEY || ENC_DEFAULT_KEY;
 }
 export function ENC(text: string) {
   return decrypt(text, getEncryptionKey());
