@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import fg from "fast-glob";
 import { type IConfig, type UserConfig } from "../types";
 import { deepMerge, isEmpty, createNestedObject } from "../utils";
+import { it } from "node:test";
 export class CoreConfig {
   #config: IConfig = config;
   private path: string = process.env.CONFIG_PATH || "./config";
@@ -102,54 +103,68 @@ export class CoreConfig {
     }
   }
   private async loadEnvConfig() {
-    if (process.env.PORT) this.#config.port = parseInt(process.env.PORT);
-    if (process.env.API_PREFIX)
-      this.merge("api_prefix", process.env.API_PREFIX);
-    if (process.env.LOG_LEVEL)
-      this.merge("logger.level", process.env.LOG_LEVEL);
-    if (this.#config.db.enable) {
-      if (process.env.DB_HOST)
-        this.merge("db.client.host", process.env.DB_HOST);
-      if (process.env.DB_PORT)
-        this.merge("db.client.port", parseInt(process.env.DB_PORT));
-      if (process.env.DB_USER)
-        this.merge("db.client.username", process.env.DB_USER);
-      if (process.env.DB_PASSWORD)
-        this.merge("db.client.password", process.env.DB_PASSWORD);
-      if (process.env.DB_DATABASE)
-        this.merge("db.client.database", process.env.DB_DATABASE);
-    }
-    if (this.#config.redis.enable) {
-      if (process.env.REDIS_MASTER_NAME)
-        this.merge("redis.client.name", process.env.REDIS_MASTER_NAME);
-      if (process.env.REDIS_USERNAME)
-        this.merge("redis.client.username", process.env.REDIS_USERNAME);
-      if (process.env.REDIS_HOST)
-        this.merge("redis.client.host", process.env.REDIS_HOST);
-      if (process.env.REDIS_PORT)
-        this.merge("redis.client.port", parseInt(process.env.REDIS_PORT));
-      if (process.env.REDIS_PASSWORD)
-        this.merge("redis.client.password", process.env.REDIS_PASSWORD);
-      if (process.env.REDIS_DATABASE)
-        this.merge(
-          "redis.client.password",
-          parseInt(process.env.REDIS_DATABASE)
-        );
-    }
-    if (this.#config.session.enable) {
-      if (process.env.SESSION_SECRET)
-        this.merge("session.client.secret", process.env.SESSION_SECRET);
-      if (process.env.SESSION_PREFIX)
-        this.merge("session.client.cookie.secure", process.env.SESSION_PREFIX);
-    }
-    if (this.#config.https.enable) {
-      if (process.env.HTTPS_PORT)
-        this.merge("https.options.port", parseInt(process.env.HTTPS_PORT));
-      if (process.env.HTTPS_KEY)
-        this.merge("https.options.key", resolve(process.env.HTTPS_KEY));
-      if (process.env.HTTPS_CERT)
-        this.merge("https.options.cert", resolve(process.env.HTTPS_CERT));
-    }
+    const list = [
+      {
+        key: "port",
+        value: "PORT",
+        type: "number",
+      },
+      { key: "api_prefix", value: "API_PREFIX", type: "string" },
+      { key: "logger.level", value: "LOG_LEVEL", type: "string" },
+      { key: "db.client.host", value: "DB_HOST", type: "string" },
+      {
+        key: "db.client.port",
+        value: "DB_PORT",
+        type: "number",
+      },
+      { key: "db.client.username", value: "DB_USER", type: "string" },
+      { key: "db.client.password", value: "DB_PASSWORD", type: "string" },
+      { key: "db.client.database", value: "DB_DATABASE", type: "string" },
+      { key: "redis.client.name", value: "REDIS_MASTER_NAME", type: "string" },
+      { key: "redis.client.username", value: "REDIS_USERNAME", type: "string" },
+      { key: "redis.client.host", value: "REDIS_HOST", type: "string" },
+      {
+        key: "redis.client.port",
+        value: "REDIS_PORT",
+        type: "number",
+      },
+      { key: "redis.client.password", value: "REDIS_PASSWORD", type: "string" },
+      {
+        key: "redis.client.password",
+        value: "REDIS_DATABASE",
+        type: "string",
+      },
+      { key: "session.client.secret", value: "SESSION_SECRET", type: "string" },
+      {
+        key: "session.client.cookie.secure",
+        value: "SESSION_PREFIX",
+        type: "string",
+      },
+      {
+        key: "https.options.port",
+        value: "HTTPS_PORT",
+        type: "number",
+      },
+      {
+        key: "https.options.key",
+        value: "HTTPS_KEY",
+        type: "resolve",
+      },
+      {
+        key: "https.options.cert",
+        value: "HTTPS_KEY",
+        type: "resolve",
+      },
+    ];
+    list.forEach((item) => {
+      if (process.env[item.value]) {
+        if (item.type === "number")
+          this.merge(item.key, parseInt(process.env[item.value]!));
+        else if (item.type === "resolve")
+          this.merge(item.key, resolve(process.env[item.value]!));
+        else this.merge(item.key, process.env[item.value]!);
+      }
+    });
   }
   private merge(str: string, value: any) {
     this.#config = deepMerge(this.#config, createNestedObject(str, value));
