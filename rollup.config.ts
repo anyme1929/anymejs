@@ -17,7 +17,7 @@ const plugins = [
   typescript({
     tsconfig: "./tsconfig.json",
   }),
-  // terser(),
+  terser(),
 ];
 export default defineConfig([
   // {

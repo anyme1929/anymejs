@@ -4,7 +4,7 @@ import { extname, basename, join, resolve } from "node:path";
 import { readFile } from "node:fs/promises";
 import fg from "fast-glob";
 import { type IConfig, type UserConfig } from "../types";
-import { deepMerge, isEmpty, createNestedObject } from "../utils";
+import { deepMerge, isEmpty, set } from "../utils";
 export class CoreConfig {
   #config: IConfig = config;
   private path: string = process.env.CONFIG_PATH || "./config";
@@ -113,7 +113,7 @@ export class CoreConfig {
     });
   }
   private merge(str: string, value: any) {
-    this.#config = deepMerge(this.#config, createNestedObject(str, value));
+    this.#config = deepMerge(this.#config, set(str, value));
   }
   private async validate() {
     // 验证必要配置项
