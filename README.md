@@ -65,7 +65,7 @@ SESSION_SECRET="session"
 #### 你也可以通过代码进行配置：
 ```ts
 //config/default.config.ts
-import { createApp, defineConfig } from "@anyme/anymejs";
+import { defineConfig } from "@anyme/anymejs";
 const config = defineConfig({
   public_path: "public",
   port: 3000,
@@ -141,8 +141,8 @@ const config = defineConfig({
   },
 });
 ```
+#### 或者在config/default.config.json
 ```json
-//config/default.config.json
 {
   "port": 3000
 }

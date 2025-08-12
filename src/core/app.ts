@@ -1,4 +1,3 @@
-import { injectable, inject } from "inversify";
 import helmet from "helmet";
 import morgan from "morgan";
 import {
@@ -14,9 +13,7 @@ import {
   type Logger,
   type IHandler,
   type RequestHandler,
-  SYMBOLS,
 } from "../types";
-@injectable("Singleton")
 export class App {
   private server: Server | null = null;
   constructor(
