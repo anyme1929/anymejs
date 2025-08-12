@@ -98,6 +98,7 @@ export class App {
       await redis.connect();
       logger.info("✅ Redis connected");
       gracefulExit.addCleanupTask(async () => {
+        redis!.removeAllListeners();
         await redis!.quit();
         logger.info("✅ Redis connection closed");
       });
