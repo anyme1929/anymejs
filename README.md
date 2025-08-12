@@ -51,21 +51,32 @@ createApp(express()).then((app) => {
 PORT=3000
 API_PREFIX=""
 
+# 日志配置
+LOG_LEVEL="info"
+
 # 数据库配置
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=""
-DB_NAME=""
+DB_DATABASE=""
 
 # Redis 配置
-REDIS_SENTINEL_HOST=localhost
-REDIS_SENTINEL_PORT=26379
+REDIS_MASTER_NAME="mymaster"
+REDIS_USERNAME=""
+REDIS_HOST=localhost
+REDIS_PORT=6379
 REDIS_PASSWORD=""
-REDIS_DB=0
+REDIS_DATABASE=0
 
 # Session 配置
 SESSION_SECRET="session"
+SESSION_PREFIX=""
+
+# HTTPS 配置
+HTTPS_PORT=443
+HTTPS_KEY="path/to/key.pem"
+HTTPS_CERT="path/to/cert.pem"
 ```
 
 #### 你也可以通过代码进行配置：
@@ -79,43 +90,30 @@ const config = defineConfig({
   api_prefix: "",
   logger: {
     level: "info",
-    dir: "logs",
   },
   db: {
-    //数据库配置
     enable: false,
     client: {
       type: "mysql",
       host: "localhost",
-      port: "3306",
+      port: 3306,
       username: "root",
       password: "",
       database: "",
       entities: [resolve("src/models/**/*{.ts,.js}")],
       migrations: [resolve("src/migrations/**/*{.ts,.js}")],
-      poolSize: "10",
-      synchronize: false, // 生产环境设为false，使用迁移
+      poolSize: 5,
+      synchronize: false,
       logging: process.env.NODE_ENV === "development",
     },
   },
   redis: {
-    //Redis配置
     enable: false,
     client: {
-      name: "mymaster",
-      password: "",
-      db: "0",
       lazyConnect: true,
-      sentinels: [
-        {
-          host: "localhost",
-          port: "26379",
-        },
-      ],
     },
   },
   session: {
-    //Session配置
     enable: true,
     prefix: "session:",
     type: "memory",
@@ -131,7 +129,6 @@ const config = defineConfig({
     },
   },
   router: {
-    //路由配置
     cors: {
       origin: "*",
       methods: "GET,POST,PUT,DELETE,OPTIONS",
@@ -142,10 +139,18 @@ const config = defineConfig({
     middlewares: [resolve("src/middlewares/**/*{.ts,.js}")],
     interceptors: [resolve("src/interceptors/**/*{.ts,.js}")],
   },
+  https: {
+    enable: false,
+    options: {
+      port: 443,
+      key: resolve("key.pem"),
+      cert: resolve("cert.pem"),
+    },
+  },
 });
 ```
 
-#### 或者在 config/default.config.json
+#### 或者使用 JSON 格式，创建 config/default.config.json：
 
 ```json
 {
@@ -155,7 +160,10 @@ const config = defineConfig({
 
 #### 配置优先级：环境变量 > 项目配置 > 默认配置
 
-#### 配置文件优先级：local/prod > default
+#### 配置文件按以下顺序加载：
+
+1. 环境特定配置（如 prod.config.ts、local.config.ts、test.config.ts）
+2. 默认配置（default.config.ts）
 
 ### 项目结构
 
