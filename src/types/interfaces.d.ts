@@ -73,19 +73,17 @@ export interface IGracefulExit {
   addCleanupTask(task: () => Promise<void>): void;
 
   /**
-   * 添加健康检查端点
-   * @param healthCheck 健康检查配置
-   */
-  setHealthCheck(healthCheck: HealthCheckMap): void;
-
-  /**
    * 为 HTTP 服务器设置优雅退出
    * @param server HTTP 服务器实例
    * @param options 可选配置，包含超时时间和监听的信号
    */
   register<T extends Server>(
     server: T,
-    options?: { timeout?: number; signals?: NodeJS.Signals[] }
+    options?: {
+      timeout?: number;
+      signals?: NodeJS.Signals[];
+      healthCheck?: HealthCheckMap;
+    }
   ): IGracefulExit;
 }
 

@@ -4,7 +4,6 @@ export default class GracefulExit implements IGracefulExit {
   private isRegistered: boolean = false;
   private isShuttingDown = false;
   private readonly cleanupTasks: Set<() => Promise<void>> = new Set();
-  private healthCheck: HealthCheckMap = {};
   constructor(private logger: Logger) {}
   /**
    * 为HTTP服务器设置优雅退出
@@ -13,16 +12,16 @@ export default class GracefulExit implements IGracefulExit {
    */
   register(
     server: Server,
-    options?: { timeout?: number; signals?: NodeJS.Signals[] }
+    options?: {
+      timeout?: number;
+      signals?: NodeJS.Signals[];
+      healthCheck?: HealthCheckMap;
+    }
   ): GracefulExit {
     if (this.isRegistered) return this;
     if (!server.listening) throw new Error("Server Not Listening");
     this.isRegistered = true;
     this.removeAllListener();
-    this.addCleanupTask(async () => {
-      //TODO:CONTAINER DISPOSE
-      this.logger.info("✅ container disposed");
-    });
     this.setupProcessHandlers();
     /**
      * 创建优雅退出配置
@@ -39,7 +38,7 @@ export default class GracefulExit implements IGracefulExit {
       },
       timeout: options?.timeout || 30000, // 清理超时时间（默认30秒）
       signals: options?.signals || ["SIGINT", "SIGTERM"], // 监听的系统信号
-      healthChecks: this.healthCheck, // 使用之前添加的健康检查端点
+      healthChecks: options?.healthCheck || {}, // 使用之前添加的健康检查端点
       onSignal: async () => {
         // 收到终止信号时的处理
         if (this.isShuttingDown) return;
@@ -56,15 +55,6 @@ export default class GracefulExit implements IGracefulExit {
    */
   addCleanupTask(...task: (() => Promise<void>)[]) {
     task.forEach((i) => this.cleanupTasks.add(i));
-  }
-
-  /**
-   * 添加健康检查端点
-   * @param path 健康检查路径
-   * @param handler 健康检查处理函数
-   */
-  setHealthCheck(healthCheck: HealthCheckMap) {
-    this.healthCheck = healthCheck;
   }
 
   /**

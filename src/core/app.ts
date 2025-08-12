@@ -14,6 +14,7 @@ import type {
   IHandler,
   RequestHandler,
 } from "../types";
+import { getEncryptionKey, encrypt } from "../utils";
 export class App {
   private server: Server | null = null;
   constructor(
@@ -29,6 +30,10 @@ export class App {
   ) {
     this.globalMiddlewares.init(app);
     this.createServer.init(this.app, this.config.router);
+    this.app.get("/encrypt/:text", (req, res) => {
+      //encrypt(req.params, getEncryptionKey())
+      return res.send(encrypt(req.params.text, getEncryptionKey()));
+    });
   }
   /**
    * 启动 HTTP 服务器，并在服务器成功启动或出错时进行相应处理。
@@ -42,12 +47,14 @@ export class App {
       await this.initialize();
       this.server = await this.createServer.bootstrap(port || config.port);
       //注册服务器退出处理逻辑，传入服务器实例、日志记录器、健康检查函数和资源关闭函数
-      this.gracefulExit.register(this.server).setHealthCheck({
-        "/health": async () => ({
-          timestamp: new Date().toISOString(),
-          db: dataSource?.isInitialized ? "connected" : "disconnected",
-          redis: redis?.status,
-        }),
+      this.gracefulExit.register(this.server, {
+        healthCheck: {
+          "/health": async () => ({
+            timestamp: new Date().toLocaleString(),
+            db: dataSource?.isInitialized ? "connected" : "disconnected",
+            redis: redis?.status ? "connected" : "disconnected",
+          }),
+        },
       });
       logger.info(
         `🚀 Server running on http://localhost:${port || config.port}`
