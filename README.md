@@ -19,7 +19,7 @@ AnyMe.js 是一个基于 Express.js 和 TypeScript 构建的现代化 Node.js We
 
 ### 安装
 
-```
+```bash
 # 使用 npm
 npm install @anyme/anymejs
 
@@ -30,7 +30,7 @@ pnpm add @anyme/anymejs
 yarn add @anyme/anymejs
 ```
 ### 基本使用
-```
+```ts
 //index.ts
 import express from "express";
 import { createApp } from "@anyme/anymejs";
@@ -63,24 +63,92 @@ REDIS_DB=0
 SESSION_SECRET="session"
 ```
 #### 你也可以通过代码进行配置：
-```
+```ts
 //config/default.config.ts
 import { createApp, defineConfig } from "@anyme/anymejs";
 const config = defineConfig({
+  public_path: "public",
   port: 3000,
-  db: {
-    enable: true,
+  api_prefix: "",
+  logger: {
+    level: "info",
+    dir: "logs",
+  },
+  db: {//数据库配置
+    enable: false,
     client: {
       type: "mysql",
       host: "localhost",
-      port: 3306,
+      port: "3306",
       username: "root",
-      password: "password",
-      database: "mydb"
-    }
-  }
+      password: "",
+      database: "",
+      entities: [resolve("src/models/**/*{.ts,.js}")],
+      migrations: [resolve("src/migrations/**/*{.ts,.js}")],
+      poolSize: "10",
+      synchronize: false, // 生产环境设为false，使用迁移
+      logging: process.env.NODE_ENV === "development",
+    },
+  },
+  redis: {//Redis配置
+    enable: false,
+    client: {
+      name: "mymaster",
+      password: "",
+      db: "0",
+      lazyConnect: true,
+      sentinels: [
+        {
+          host: "localhost",
+          port: "26379",
+        },
+      ],
+    },
+  },
+  session: {//Session配置
+    enable: true,
+    prefix: "session:",
+    type: "memory",
+    client: {
+      secret: "session",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 1000 * 60 * 60,
+      },
+    },
+  },
+  router: {//路由配置
+    cors: {
+      origin: "*",
+      methods: "GET,POST,PUT,DELETE,OPTIONS",
+      credentials: false,
+    },
+    routePrefix: "",
+    controllers: [resolve("src/controllers/**/*{.ts,.js}")],
+    middlewares: [resolve("src/middlewares/**/*{.ts,.js}")],
+    interceptors: [resolve("src/interceptors/**/*{.ts,.js}")],
+  },
+  https: {//HTTPS配置
+    enable: false,
+    options: {
+      port: 443,
+      key: path.resolve(process.env.HTTPS_KEY || "key.pem"),
+      cert: path.resolve(process.env.HTTPS_CERT || "cert.pem"),
+    },
+  },
 });
 ```
+```json
+//config/default.config.json
+{
+  "port": 3000
+}
+```
+#### 配置优先级：环境变量 > 项目配置 > 默认配置
+#### 配置文件优先级：local/prod > default
 ### 项目结构
 ```
 src/
