@@ -24,7 +24,7 @@ export class CoreConfig {
     return this.#config;
   }
   private async loadConfigFiles() {
-    let files = await fg(this.getPath(), {
+    const files = await fg(this.getPath(), {
       onlyFiles: true,
       ignore: this.ignore,
       absolute: true,
@@ -78,6 +78,7 @@ export class CoreConfig {
       );
       this.#config = deepMerge(this.#config, ...configs);
     } catch (error) {
+      console.error("❌ Failed to load config:", error);
       throw error;
     }
   }

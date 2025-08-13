@@ -30,5 +30,5 @@
       "allowSyntheticDefaultImports": true
     }
   },
-  "include": ["**/*.ts", "import.ts"] // 包含的源文件路径
+  "include": ["**/*.ts"] // 包含的源文件路径
 }

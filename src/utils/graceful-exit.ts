@@ -21,7 +21,6 @@ export default class GracefulExit implements IGracefulExit {
     if (this.isRegistered) return this;
     if (!server.listening) throw new Error("Server Not Listening");
     this.isRegistered = true;
-    this.removeAllListener();
     this.setupProcessHandlers();
     /**
      * 创建优雅退出配置
@@ -72,33 +71,18 @@ export default class GracefulExit implements IGracefulExit {
    */
   private setupProcessHandlers() {
     // 未捕获异常
-    process.on("uncaughtException", this.uncaughtException);
+    process.on("uncaughtException", (err: Error) =>
+      this.handleSignal("❌ Uncaught Exception:", err)
+    );
     // 未处理的Promise拒绝
-    process.on("unhandledRejection", this.unhandledRejection);
+    process.on("unhandledRejection", (err: Error) =>
+      this.handleSignal("⚠️ Unhandled Rejection:", err)
+    );
   }
-  private uncaughtException = async (err: Error) => {
+  private async handleSignal(msg: string, err: Error) {
     if (this.isShuttingDown) return;
     this.isShuttingDown = true;
-    this.logger.error("⚠️ Uncaught Exception:", err);
+    this.logger.error(msg, err);
     await this.cleanup();
-  };
-  private unhandledRejection = async (err: Error) => {
-    if (this.isShuttingDown) return;
-    this.isShuttingDown = true;
-    this.logger.error("⚠️ Unhandled Rejection:", err);
-    await this.cleanup();
-  };
-  private removeAllListener() {
-    const signals = [
-      "SIGINT",
-      "SIGTERM",
-      "uncaughtException",
-      "unhandledRejection",
-    ] as NodeJS.Signals[];
-    signals.forEach((signal) => {
-      process.listeners(signal).forEach((i) => {
-        if (i.name === signal || "cleanup") process.removeListener(signal, i);
-      });
-    });
   }
 }
