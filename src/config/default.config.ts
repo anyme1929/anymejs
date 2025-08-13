@@ -28,13 +28,13 @@ export const ENV_KEY_VALUES = [
   },
   { key: "redis.client.password", value: "REDIS_PASSWORD", type: "string" },
   {
-    key: "redis.client.password",
+    key: "redis.client.db",
     value: "REDIS_DATABASE",
     type: "string",
   },
   { key: "session.client.secret", value: "SESSION_SECRET", type: "string" },
   {
-    key: "session.client.cookie.secure",
+    key: "session.prefix",
     value: "SESSION_PREFIX",
     type: "string",
   },
@@ -50,7 +50,7 @@ export const ENV_KEY_VALUES = [
   },
   {
     key: "https.options.cert",
-    value: "HTTPS_KEY",
+    value: "HTTPS_CERT",
     type: "resolve",
   },
 ];

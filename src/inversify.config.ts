@@ -113,7 +113,6 @@ class DI {
       .inSingletonScope();
     this.container.bind<Provider<App>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: App | undefined = undefined;
-      //TODO: 待传入EXPRESS实例
       return async (express: Application) => {
         const config = await ctx.getAsync<IConfig>(SYMBOLS.Config);
         const logger = await ctx.getAsync<Logger>(SYMBOLS.Logger);
