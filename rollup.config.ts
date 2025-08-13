@@ -8,7 +8,7 @@ import nodeExternals from "rollup-plugin-node-externals";
 import dts from "rollup-plugin-dts";
 const plugins = [
   nodeExternals({
-    deps: true,
+    deps: false,
     peerDeps: true,
   }),
   resolve({ preferBuiltins: true }),
