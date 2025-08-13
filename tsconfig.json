@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "EsNext", // 编译目标为ES2020
+    "target": "Es2022", // 编译目标为ES2022
     "module": "EsNext", // 使用CommonJS模块系统
     "rootDir": "./", // 源代码根目录
     "strict": true, // 启用所有严格类型检查
