@@ -3,17 +3,23 @@ import {
   type RoutingControllersOptions,
   useContainer,
 } from "routing-controllers";
-import {
-  type Application,
-  type IocAdapter,
-  type Server,
+import { createServer as createHttps } from "node:https";
+import { createServer as createHttp } from "node:http";
+import { resolve, isAbsolute } from "node:path";
+import { readFile } from "node:fs/promises";
+import type {
+  Application,
+  IocAdapter,
+  Server,
+  IConfig,
   ICreateServer,
+  Logger,
 } from "../types";
 export default class CreateServer implements ICreateServer {
   private app: Application | null = null;
   private server: Server | null = null;
   private pending: Promise<Server> | null = null;
-  constructor(iocAdapter: IocAdapter) {
+  constructor(iocAdapter: IocAdapter, private readonly logger: Logger) {
     useContainer(iocAdapter);
   }
   init(app: Application, config: RoutingControllersOptions) {
@@ -26,14 +32,22 @@ export default class CreateServer implements ICreateServer {
    * @param port 服务器监听的端口号
    * @returns 服务器实例的Promise
    */
-  async bootstrap(port: number): Promise<Server> {
+  async bootstrap(port: number, options: IConfig["https"]): Promise<Server> {
     if (!this.app) throw new Error("Server not initialized");
     if (this.pending) return this.pending;
-    this.pending = new Promise<Server>((resolve, reject) => {
+    this.pending = new Promise<Server>((res, rej) => {
       if (this.server?.listening) throw new Error("Server already running");
-      this.server = this.app!.listen(port, (error) => {
-        if (error) reject(error);
-        else resolve(this.server!);
+      this.createServer(options).then(({ ssl, server }) => {
+        this.server = server
+          .listen(ssl ? options.ssl.port : port, () => {
+            res(this.server!);
+            this.logger.info(
+              `🚀 Server running on ${ssl ? "https" : "http"}://localhost:${
+                ssl ? 443 : port
+              }`
+            );
+          })
+          .on("error", (error) => rej(error));
         this.pending = null;
       });
     });
@@ -55,5 +69,33 @@ export default class CreateServer implements ICreateServer {
         }
       });
     });
+  }
+  private async createServer(options: IConfig["https"]) {
+    if (options.enable) {
+      const keyPath = isAbsolute(options.ssl.key)
+        ? options.ssl.key
+        : resolve(options.ssl.key);
+      const certPath = isAbsolute(options.ssl.cert)
+        ? options.ssl.cert
+        : resolve(options.ssl.cert);
+      const [key, cert] = await Promise.allSettled([
+        readFile(keyPath),
+        readFile(certPath),
+      ]);
+      if (key.status === "fulfilled" && cert.status === "fulfilled") {
+        const ssl = {
+          key: key.value,
+          cert: cert.value,
+        };
+        return {
+          server: createHttps(ssl, this.app!),
+          ssl: true,
+        };
+      }
+    }
+    return {
+      server: createHttp(this.app!),
+      ssl: false,
+    };
   }
 }

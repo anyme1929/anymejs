@@ -43,9 +43,8 @@ export class App {
         return res.send(encrypt(req.params.text, getEncryptionKey()));
       });
       this.server = await this.createServer
-        .init(this.app, this.config.router)
-        .bootstrap(port || config.port);
-      //注册服务器退出处理逻辑，传入服务器实例、日志记录器、健康检查函数和资源关闭函数
+        .init(this.app, this.config.server)
+        .bootstrap(port || config.port, this.config.https);
       this.gracefulExit.register(this.server, {
         healthCheck: {
           "/health": async () => ({
@@ -55,9 +54,6 @@ export class App {
           }),
         },
       });
-      logger.info(
-        `🚀 Server running on http://localhost:${port || config.port}`
-      );
       return this.server;
     } catch (error) {
       logger.error("❌ Failed to start server:", error);

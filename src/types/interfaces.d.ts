@@ -50,10 +50,10 @@ export interface IConfig {
     client: SessionOptions;
   };
   /** 路由配置选项 */
-  router: RoutingControllersOptions;
+  server: RoutingControllersOptions;
   https: {
     enable: boolean;
-    options: {
+    ssl: {
       port: number;
       key: string;
       cert: string;
@@ -94,8 +94,8 @@ export interface ICreateServer {
    * @param port 服务器监听的端口号
    * @returns 解析为 Server 实例的 Promise
    */
-  init(app: Application, config: IConfig["router"]): ICreateServer;
-  bootstrap(port: number): Promise<Server>;
+  init(app: Application, config: IConfig["server"]): ICreateServer;
+  bootstrap(port: number, options: IConfig["https"]): Promise<Server>;
 }
 
 export interface ICreateSession {

@@ -142,8 +142,8 @@ const config = defineConfig({
     enable: false,
     options: {
       port: 443,
-      key: resolve("key.pem"),
-      cert: resolve("cert.pem"),
+      key: "path/to/key.pem",
+      cert: "path/to/cert.pem",
     },
   },
 });
@@ -163,6 +163,60 @@ const config = defineConfig({
 
 1. 环境特定配置（如 prod.config.ts、local.config.ts、test.config.ts）
 2. 默认配置（default.config.ts）
+
+### HTTPS 本地开发
+
+#### 使用 openssl 创建证书
+
+在./ssl 目录下 创建 openssl.cnf
+
+```bash
+[req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+x509_extensions = v3_ca
+
+[dn]
+C = US
+ST = State
+L = City
+O = Organization
+OU = Department
+CN = localhost
+
+[v3_ca]
+subjectAltName = @alt_names
+keyUsage = digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+basicConstraints = CA:FALSE
+
+[alt_names]
+DNS.1 = localhost
+DNS.2 = 127.0.0.1
+IP.1 = 127.0.0.1
+IP.2 = ::1
+
+```
+
+生成证书和私钥
+
+```
+#生成私钥
+
+openssl genrsa -out server.key 2048
+
+#使用配置文件生成自签名证书
+
+openssl req -new -x509 -days 3650 -key server.key -out server.crt -config openssl.cnf
+```
+
+这将生成两个文件：
+
+- server.key：私钥文件
+
+- server.crt：证书文件（有效期 10 年）
 
 ### 项目结构
 

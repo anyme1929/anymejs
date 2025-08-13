@@ -91,10 +91,10 @@ class DI {
     this.container
       .bind<CreateServer>(SYMBOLS.CreateServer)
       .toResolvedValue(
-        (iocAdapter: IocAdapter) => {
-          return new CreateServer(iocAdapter);
+        (iocAdapter: IocAdapter, logger: Logger) => {
+          return new CreateServer(iocAdapter, logger);
         },
-        [SYMBOLS.IocAdapter]
+        [SYMBOLS.IocAdapter, SYMBOLS.Logger]
       )
       .inSingletonScope();
 

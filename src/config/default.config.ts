@@ -7,7 +7,7 @@ export const ENV_KEY_VALUES = [
     value: "PORT",
     type: "number",
   },
-  { key: "router.routePrefix", value: "API_PREFIX", type: "string" },
+  { key: "server.routePrefix", value: "API_PREFIX", type: "string" },
   { key: "logger.level", value: "LOG_LEVEL", type: "string" },
   { key: "db.client.host", value: "DB_HOST", type: "string" },
   {
@@ -129,7 +129,7 @@ export default {
       },
     },
   },
-  router: {
+  server: {
     cors: {
       origin: "*",
       methods: "GET,POST,PUT,DELETE,OPTIONS",
@@ -142,10 +142,10 @@ export default {
   },
   https: {
     enable: false,
-    options: {
+    ssl: {
       port: 443,
-      key: resolve("key.pem"),
-      cert: resolve("cert.pem"),
+      key: "./ssl/server.key",
+      cert: "./ssl/server.crt",
     },
   },
 } as IConfig;

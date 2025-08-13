@@ -6,3 +6,4 @@ config/**/*
 controllers/**/*
 .env
 .vscode/**/*
+ssl/**/*
