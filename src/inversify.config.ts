@@ -1,7 +1,8 @@
 import { CoreConfig } from "./config";
-import { App } from "./core/app";
+import { Anyme } from "./core/anyme";
 import GracefulExit from "./utils/graceful-exit";
 import InversifyAdapter from "./utils/inversify-adapter";
+import RouteRegistrar from "./utils/route-registrar";
 import { Container, type Provider } from "inversify";
 import {
   CreateDataSource,
@@ -15,14 +16,11 @@ import type {
   Logger,
   IConfig,
   IocAdapter,
-  ICreateSession,
-  IGracefulExit,
-  ICreateServer,
   DataSource,
   Redis,
 } from "./types";
 import { SYMBOLS } from "./utils/constants";
-type AppProvider = (express?: Application) => Promise<App>;
+type AppProvider = (express?: Application) => Promise<Anyme>;
 class DI {
   static container: Container = new Container();
   static registered = false;
@@ -34,69 +32,43 @@ class DI {
       .toDynamicValue(async () => await new CoreConfig().load())
       .inSingletonScope();
 
-    // 1. 注册日志服务  getAsync 获取
     this.container
       .bind(SYMBOLS.Logger)
       .toResolvedValue(
-        (config: IConfig) => {
-          const { logger } = config;
-          return new WinstonLogger(logger).logger;
-        },
-        [SYMBOLS.Config]
-      )
-      .inSingletonScope();
-    // 2. 注册 IocAdapter 服务
-    this.container
-      .bind<IocAdapter>(SYMBOLS.IocAdapter)
-      .toConstantValue(new InversifyAdapter(this.container));
-    // 3. 注册数据库连接服务
-    this.container
-      .bind(SYMBOLS.DataSource)
-      .toResolvedValue(
-        (config: IConfig) => {
-          const { db } = config;
-          return CreateDataSource(db);
-        },
+        (config: IConfig) => new WinstonLogger(config.logger).logger,
         [SYMBOLS.Config]
       )
       .inSingletonScope();
 
-    // 4. 注册 Redis 服务  getAsync 获取
+    this.container
+      .bind<IocAdapter>(SYMBOLS.IocAdapter)
+      .toConstantValue(new InversifyAdapter(this.container));
+    // 注册数据库连接服务
+    this.container
+      .bind(SYMBOLS.DataSource)
+      .toResolvedValue(
+        (config: IConfig) => CreateDataSource(config.db),
+        [SYMBOLS.Config]
+      )
+      .inSingletonScope();
+
+    // 注册 Redis 服务
     this.container
       .bind(SYMBOLS.Redis)
       .toResolvedValue(
-        (config: IConfig, logger: Logger) => {
-          const { redis } = config;
-          return CreateRedis(redis, logger);
-        },
+        (config: IConfig, logger: Logger) => CreateRedis(config.redis, logger),
         [SYMBOLS.Config, SYMBOLS.Logger]
       )
       .inSingletonScope();
 
-    // 5. 注册会话处理服务  getAsync 获取
+    // 注册会话处理服务
     this.container
       .bind(SYMBOLS.CreateSession)
       .toResolvedValue(
-        (config: IConfig) => {
-          const { session } = config;
-          return new CreateSession(session.client);
-        },
+        (config: IConfig) => new CreateSession(config.session.client),
         [SYMBOLS.Config]
       )
       .inSingletonScope();
-
-    // 6. 注册服务器创建服务
-    this.container
-      .bind<CreateServer>(SYMBOLS.CreateServer)
-      .toResolvedValue(
-        (iocAdapter: IocAdapter, logger: Logger) => {
-          return new CreateServer(iocAdapter, logger);
-        },
-        [SYMBOLS.IocAdapter, SYMBOLS.Logger]
-      )
-      .inSingletonScope();
-
-    // 7. 注册优雅退出服务  getAsync 获取
     this.container
       .bind(SYMBOLS.GracefulExit)
       .toResolvedValue(
@@ -104,30 +76,46 @@ class DI {
         [SYMBOLS.Logger]
       )
       .inSingletonScope();
-    this.container.bind<Provider<App>>(SYMBOLS.App).toProvider((ctx) => {
-      let instance: App | undefined = undefined;
+
+    // 6. 注册服务器创建服务
+    this.container
+      .bind<CreateServer>(SYMBOLS.CreateServer)
+      .toResolvedValue(
+        (iocAdapter: IocAdapter, logger: Logger) =>
+          new CreateServer(iocAdapter, logger),
+        [SYMBOLS.IocAdapter, SYMBOLS.Logger]
+      )
+      .inSingletonScope();
+    this.container
+      .bind(SYMBOLS.RouteRegistrar)
+      .to(RouteRegistrar)
+      .inSingletonScope();
+    this.container.bind<Provider<Anyme>>(SYMBOLS.App).toProvider((ctx) => {
+      let instance: Anyme | undefined = undefined;
       return async (express: Application) => {
         const config = await ctx.getAsync<IConfig>(SYMBOLS.Config);
         const logger = await ctx.getAsync<Logger>(SYMBOLS.Logger);
-        const createSession = await ctx.getAsync<ICreateSession>(
+        const createSession = await ctx.getAsync<CreateSession>(
           SYMBOLS.CreateSession
         );
-        const gracefulExit = await ctx.getAsync<IGracefulExit>(
+        const createServer = ctx.get<CreateServer>(SYMBOLS.CreateServer);
+        const gracefulExit = await ctx.getAsync<GracefulExit>(
           SYMBOLS.GracefulExit
         );
-        const createServer = ctx.get<ICreateServer>(SYMBOLS.CreateServer);
+        const routeRegistrar = ctx.get<RouteRegistrar>(SYMBOLS.RouteRegistrar);
         const dataSource = await ctx.getAsync<DataSource | undefined>(
           SYMBOLS.DataSource
         );
         const redis = await ctx.getAsync<Redis | undefined>(SYMBOLS.Redis);
         if (!instance)
-          instance = new App(
+          instance = new Anyme(
             express,
             config,
             logger,
-            createSession,
             createServer,
+            createSession,
             gracefulExit,
+            routeRegistrar,
             dataSource,
             redis
           );
@@ -136,7 +124,7 @@ class DI {
     });
     this.registered = true;
   }
-  static createApp = (express: Application): Promise<App> => {
+  static createApp = (express: Application): Promise<Anyme> => {
     return this.container.get<AppProvider>(SYMBOLS.App)(express);
   };
 }

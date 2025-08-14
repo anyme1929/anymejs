@@ -2,38 +2,35 @@ import type {
   IConfig,
   DataSource,
   Redis,
-  IServer,
-  Application,
-  ICreateServer,
   IGracefulExit,
-  ICreateSession,
   Logger,
+  IServer,
+  ICreateServer,
+  ICreateSession,
+  IRouteRegistrar,
+  Application,
 } from "../types";
-export class App {
+export class Anyme {
   private server: IServer | null = null;
   constructor(
-    private readonly app: Application,
+    private app: Application,
     private config: IConfig,
     private logger: Logger,
-    private createSession: ICreateSession,
     private createServer: ICreateServer,
+    private createSession: ICreateSession,
     private gracefulExit: IGracefulExit,
+    private routeRegistrar: IRouteRegistrar,
     private dataSource?: DataSource,
     private redis?: Redis
   ) {}
-  /**
-   * 启动 HTTP 服务器，并在服务器成功启动或出错时进行相应处理。
-   * 返回一个 Promise，当服务器成功启动时解析为服务器实例，出错时拒绝并抛出错误。
-   * @returns {Promise<IServer>} 一个 Promise，解析为服务器实例。
-   */
   async bootstrap(port?: number): Promise<IServer> {
     if (this.server) return this.server;
-    const { config, logger, dataSource, redis } = this;
+    const { dataSource, redis } = this;
     try {
       await this.initialize();
       this.server = await this.createServer
         .init(this.app, this.config.server)
-        .bootstrap(port || config.port, this.config.https);
+        .bootstrap(port || this.config.port, this.config.https);
       this.gracefulExit.register(this.server, {
         healthCheck: {
           "/health": async () => ({
@@ -45,53 +42,57 @@ export class App {
       });
       return this.server;
     } catch (error) {
-      logger.error("❌ Failed to start server:", error);
+      this.logger.error("❌ Failed to start server:", error);
       throw error;
     }
   }
-  private async initialize() {
+  protected async initialize() {
     try {
       await Promise.all([this.initDatabase(), this.initRedis()]);
-      await this.configSession();
+      this.configSession();
+      this.routeRegistrar.register(this.app);
     } catch (error) {
       this.logger.error("❌ Failed to initialize", error);
       throw error;
     }
   }
   private async initDatabase() {
-    const { config, dataSource, logger, gracefulExit } = this;
     try {
-      if (!dataSource || config.db.enable === false || dataSource.isInitialized)
+      if (
+        !this.dataSource ||
+        this.config.db.enable === false ||
+        this.dataSource.isInitialized
+      )
         return;
-      await dataSource.initialize();
-      logger.info("✅ Database connected");
-      gracefulExit.addCleanupTask(async () => {
-        await dataSource!.destroy();
-        logger.info("✅ Database connection closed");
+      await this.dataSource.initialize();
+      this.logger.info("✅ Database connected");
+      this.gracefulExit.addCleanupTask(async () => {
+        await this.dataSource!.destroy();
+        this.logger.info("✅ Database connection closed");
       });
     } catch (error) {
-      logger.error("❌ Failed to connect to database", error);
+      this.logger.error("❌ Failed to connect to database", error);
       throw error;
     }
   }
   private async initRedis() {
-    const { config, redis, logger, gracefulExit } = this;
     try {
-      if (!redis || config.redis.enable === false) return;
-      if (redis.status !== "wait") return;
-      await redis.connect();
-      logger.info("✅ Redis connected");
-      gracefulExit.addCleanupTask(async () => {
-        redis!.removeAllListeners();
-        await redis!.quit();
-        logger.info("✅ Redis connection closed");
+      if (!this.redis || this.config.redis.enable === false) return;
+      if (this.redis.status !== "wait") return;
+      await this.redis.connect();
+      this.logger.info("✅ Redis connected");
+      this.gracefulExit.addCleanupTask(async () => {
+        this.redis!.removeAllListeners();
+        await this.redis!.quit();
+        this.logger.info("✅ Redis connection closed");
       });
     } catch (error) {
-      logger.error("❌ Failed to connect to Redis", error);
+      this.logger.error("❌ Failed to connect to Redis", error);
       throw error;
     }
   }
-  private async configSession() {
+
+  private configSession() {
     try {
       const { enable, type, prefix } = this.config.session;
       if (enable === false) return;

@@ -1,6 +1,8 @@
-<!DOCTYPE html>
+import { Application, IRouteRegistrar } from "../types";
+import { encrypt, getEncryptionKey } from ".";
+export default class RouteRegistrar implements IRouteRegistrar {
+  private html = `<!DOCTYPE html>
 <html lang="zh">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -332,4 +334,20 @@
     </div>
 </body>
 
-</html>
+</html>`;
+  register(app: Application) {
+    this.welcome(app);
+    this.encrypt(app);
+  }
+  private welcome(app: Application) {
+    app.get("/", (req, res) => {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.send(this.html);
+    });
+  }
+  private encrypt(app: Application) {
+    app.get("/encrypt/:text", (req, res) =>
+      res.send(encrypt(req.params.text, getEncryptionKey()))
+    );
+  }
+}

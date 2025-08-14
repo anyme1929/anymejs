@@ -1,4 +1,4 @@
-import { loadEnv } from "./utils";
+import { loadEnv } from ".";
 const node_env = process.env.NODE_ENV || "development";
 const isDev = node_env === "development";
 const envPath = isDev ? ".env.local" : ".env.prod";

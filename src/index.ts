@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import "./env";
+import "./utils/env";
 import { DI } from "./inversify.config";
 export { defineConfig, ENC } from "./utils";
 export const createApp = DI.createApp;

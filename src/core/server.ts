@@ -53,23 +53,6 @@ export default class CreateServer implements ICreateServer {
     });
     return this.pending;
   }
-  /**
-   * 关闭服务器
-   * @returns 关闭完成的Promise
-   */
-  async close(): Promise<void> {
-    if (this.pending) await this.pending;
-    if (!this.server?.listening) return;
-    return new Promise((resolve, reject) => {
-      this.server!.close((error) => {
-        if (error) reject(error);
-        else {
-          this.server = null;
-          resolve();
-        }
-      });
-    });
-  }
   private async createServer(options: IConfig["https"]) {
     if (options.enable) {
       const keyPath = isAbsolute(options.ssl.key)

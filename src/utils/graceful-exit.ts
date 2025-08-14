@@ -31,20 +31,12 @@ export default class GracefulExit implements IGracefulExit {
      * }
      */
     createTerminus(server, {
-      logger: (msg: string, err: Error) => {
-        if (err) this.logger.error(msg, err);
-        if (msg) this.logger.info(msg);
-      },
+      logger: this.logger.error,
       timeout: options?.timeout || 30000, // 清理超时时间（默认30秒）
       signals: options?.signals || ["SIGINT", "SIGTERM"], // 监听的系统信号
       healthChecks: options?.healthCheck || {}, // 使用之前添加的健康检查端点
-      onSignal: async () => {
-        // 收到终止信号时的处理
-        if (this.isShuttingDown) return;
-        this.isShuttingDown = true;
-        this.logger.info("🚦 Received termination signal");
-        await this.cleanup();
-      }, // 关闭完成回调
+      onSignal: async () =>
+        await this.handleSignal("🚦 Received termination signal"),
     });
     return this;
   }
@@ -52,8 +44,8 @@ export default class GracefulExit implements IGracefulExit {
    * 添加资源关闭任务
    * @param task 返回Promise的资源关闭函数
    */
-  addCleanupTask(...task: (() => Promise<void>)[]) {
-    task.forEach((i) => this.cleanupTasks.add(i));
+  addCleanupTask(...tasks: (() => Promise<void>)[]) {
+    tasks.forEach((task) => this.cleanupTasks.add(task));
   }
 
   /**
@@ -79,10 +71,11 @@ export default class GracefulExit implements IGracefulExit {
       this.handleSignal("⚠️ Unhandled Rejection:", err)
     );
   }
-  private async handleSignal(msg: string, err: Error) {
+  private async handleSignal(msg: string, err?: Error) {
     if (this.isShuttingDown) return;
     this.isShuttingDown = true;
-    this.logger.error(msg, err);
+    if (err) this.logger.error(msg, err);
+    else this.logger.info(msg);
     await this.cleanup();
   }
 }

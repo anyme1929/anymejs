@@ -154,3 +154,6 @@ export interface LoadEnvOptions {
   cwd?: string;
   override?: boolean;
 }
+export interface IRouteRegistrar {
+  register(app: Application): void;
+}
