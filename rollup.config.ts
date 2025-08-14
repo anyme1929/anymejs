@@ -16,8 +16,18 @@ const plugins = [
   json(),
   typescript({
     tsconfig: "./tsconfig.json",
+    sourceMap: true,
+    inlineSources: true,
   }),
-  terser(),
+  terser({
+    format: {
+      comments: false,
+    },
+    compress: {
+      drop_console: true,
+      drop_debugger: true,
+    },
+  }),
 ];
 export default defineConfig([
   // {
@@ -37,7 +47,7 @@ export default defineConfig([
       format: "esm",
       sourcemap: true,
       // preserveModules: true,
-      // preserveModulesRoot: "src",
+      // preserveModulesRoot: 'src'
     },
     plugins,
   },
@@ -47,8 +57,6 @@ export default defineConfig([
       dir: "dist/cjs",
       format: "cjs",
       sourcemap: true,
-      // preserveModules: true,
-      // preserveModulesRoot: 'src'
     },
     plugins,
   },

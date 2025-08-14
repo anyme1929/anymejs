@@ -36,7 +36,7 @@ export default class CreateServer implements ICreateServer {
     if (!this.app) throw new Error("Server not initialized");
     if (this.pending) return this.pending;
     this.pending = new Promise<IServer>((res, rej) => {
-      if (this.server?.listening) throw new Error("Server already running");
+      if (this.server?.listening) return rej("Server already running");
       this.createServer(options).then(({ ssl, server }) => {
         this.server = server
           .listen(ssl ? options.ssl.port : port, () => {
@@ -74,7 +74,7 @@ export default class CreateServer implements ICreateServer {
           server: createHttps(ssl, this.app!),
           ssl: true,
         };
-      }
+      } else this.logger.warn("ssl key or cert is not found");
     }
     return {
       server: createHttp(this.app!),

@@ -1,5 +1,6 @@
 import { Application, IRouteRegistrar } from "../types";
 import { encrypt, getEncryptionKey } from ".";
+
 export default class RouteRegistrar implements IRouteRegistrar {
   private html = `<!DOCTYPE html>
 <html lang="zh">
@@ -220,6 +221,9 @@ export default class RouteRegistrar implements IRouteRegistrar {
             transition: all 0.3s ease;
             border: 1px solid rgba(255, 255, 255, 0.2);
             flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .github-link:hover {
@@ -267,6 +271,50 @@ export default class RouteRegistrar implements IRouteRegistrar {
 
             .libraries-section {
                 padding: 0.8rem;
+            }
+            
+            .feature {
+                font-size: 0.75rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .welcome-container {
+                padding: 0.8rem;
+                width: 98vw;
+                height: 98vh;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 0.8rem;
+            }
+            
+            .logo {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+            
+            .feature {
+                font-size: 0.7rem;
+                padding: 0.3rem 0.6rem;
+            }
+            
+            .library-name {
+                font-size: 0.9rem;
+            }
+            
+            .library-description {
+                font-size: 0.75rem;
+            }
+            
+            .library-link {
+                font-size: 0.7rem;
             }
         }
     </style>
@@ -335,16 +383,19 @@ export default class RouteRegistrar implements IRouteRegistrar {
 </body>
 
 </html>`;
+
   register(app: Application) {
     this.welcome(app);
     this.encrypt(app);
   }
+
   private welcome(app: Application) {
     app.get("/", (req, res) => {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.send(this.html);
     });
   }
+
   private encrypt(app: Application) {
     app.get("/encrypt/:text", (req, res) =>
       res.send(encrypt(req.params.text, getEncryptionKey()))
