@@ -1,47 +1,36 @@
-import morgan from "morgan";
 import type {
   IConfig,
   DataSource,
   Redis,
-  Server,
+  IServer,
   Application,
   ICreateServer,
   IGracefulExit,
   ICreateSession,
-  IGlobalMiddlewares,
   Logger,
-  IHandler,
-  RequestHandler,
 } from "../types";
-import { getEncryptionKey, encrypt } from "../utils";
 export class App {
-  private server: Server | null = null;
+  private server: IServer | null = null;
   constructor(
-    private app: Application,
+    private readonly app: Application,
     private config: IConfig,
     private logger: Logger,
     private createSession: ICreateSession,
     private createServer: ICreateServer,
     private gracefulExit: IGracefulExit,
-    private globalMiddlewares: IGlobalMiddlewares,
     private dataSource?: DataSource,
     private redis?: Redis
-  ) {
-    this.globalMiddlewares.init(app);
-  }
+  ) {}
   /**
    * 启动 HTTP 服务器，并在服务器成功启动或出错时进行相应处理。
    * 返回一个 Promise，当服务器成功启动时解析为服务器实例，出错时拒绝并抛出错误。
-   * @returns {Promise<App.Server>} 一个 Promise，解析为服务器实例。
+   * @returns {Promise<IServer>} 一个 Promise，解析为服务器实例。
    */
-  async bootstrap(port?: number): Promise<Server> {
+  async bootstrap(port?: number): Promise<IServer> {
     if (this.server) return this.server;
     const { config, logger, dataSource, redis } = this;
     try {
       await this.initialize();
-      this.app.get("/encrypt/:text", (req, res) => {
-        return res.send(encrypt(req.params.text, getEncryptionKey()));
-      });
       this.server = await this.createServer
         .init(this.app, this.config.server)
         .bootstrap(port || config.port, this.config.https);
@@ -60,17 +49,10 @@ export class App {
       throw error;
     }
   }
-  use(...handlers: (IHandler | RequestHandler)[]) {
-    this.globalMiddlewares.register(...handlers);
-  }
   private async initialize() {
     try {
+      await Promise.all([this.initDatabase(), this.initRedis()]);
       await this.configSession();
-      await Promise.all([
-        this.initDatabase(),
-        this.initRedis(),
-        this.cinfigGlobalMiddlewares(),
-      ]);
     } catch (error) {
       this.logger.error("❌ Failed to initialize", error);
       throw error;
@@ -110,24 +92,18 @@ export class App {
     }
   }
   private async configSession() {
-    const { createSession, config, logger, globalMiddlewares } = this;
     try {
-      const { enable, type, prefix } = config.session;
+      const { enable, type, prefix } = this.config.session;
       if (enable === false) return;
       if (type === "redis") {
         if (!this.redis) throw new Error("Redis is required");
-        createSession.setRedis(prefix, this.redis);
+        this.createSession.setRedis(prefix, this.redis);
       }
-      const session = createSession.getHandler();
-      globalMiddlewares.register(session);
-
-      logger.info(`✅ Session set with ${type} store`);
+      this.app.use(this.createSession.getHandler());
+      this.logger.info(`✅ Session set with ${type} store`);
     } catch (error) {
-      logger.error("❌ Failed to config session:", error);
+      this.logger.error("❌ Failed to config session:", error);
       throw error;
     }
-  }
-  private async cinfigGlobalMiddlewares() {
-    this.globalMiddlewares.register(morgan("dev"));
   }
 }

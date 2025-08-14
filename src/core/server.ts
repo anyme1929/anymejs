@@ -10,15 +10,15 @@ import { readFile } from "node:fs/promises";
 import type {
   Application,
   IocAdapter,
-  Server,
+  IServer,
   IConfig,
   ICreateServer,
   Logger,
 } from "../types";
 export default class CreateServer implements ICreateServer {
   private app: Application | null = null;
-  private server: Server | null = null;
-  private pending: Promise<Server> | null = null;
+  private server: IServer | null = null;
+  private pending: Promise<IServer> | null = null;
   constructor(iocAdapter: IocAdapter, private readonly logger: Logger) {
     useContainer(iocAdapter);
   }
@@ -32,10 +32,10 @@ export default class CreateServer implements ICreateServer {
    * @param port 服务器监听的端口号
    * @returns 服务器实例的Promise
    */
-  async bootstrap(port: number, options: IConfig["https"]): Promise<Server> {
+  async bootstrap(port: number, options: IConfig["https"]): Promise<IServer> {
     if (!this.app) throw new Error("Server not initialized");
     if (this.pending) return this.pending;
-    this.pending = new Promise<Server>((res, rej) => {
+    this.pending = new Promise<IServer>((res, rej) => {
       if (this.server?.listening) throw new Error("Server already running");
       this.createServer(options).then(({ ssl, server }) => {
         this.server = server

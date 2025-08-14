@@ -1,5 +1,5 @@
 import { createTerminus } from "@godaddy/terminus";
-import type { Logger, HealthCheckMap, IGracefulExit, Server } from "../types";
+import type { Logger, HealthCheckMap, IGracefulExit, IServer } from "../types";
 export default class GracefulExit implements IGracefulExit {
   private isRegistered: boolean = false;
   private isShuttingDown = false;
@@ -11,7 +11,7 @@ export default class GracefulExit implements IGracefulExit {
    * @param logger 日志记录器
    */
   register(
-    server: Server,
+    server: IServer,
     options?: {
       timeout?: number;
       signals?: NodeJS.Signals[];

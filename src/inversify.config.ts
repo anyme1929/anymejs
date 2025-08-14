@@ -2,7 +2,6 @@ import { CoreConfig } from "./config";
 import { App } from "./core/app";
 import GracefulExit from "./utils/graceful-exit";
 import InversifyAdapter from "./utils/inversify-adapter";
-import GlobalMiddlewares from "./utils/global-middlewares";
 import { Container, type Provider } from "inversify";
 import {
   CreateDataSource,
@@ -16,7 +15,6 @@ import type {
   Logger,
   IConfig,
   IocAdapter,
-  IGlobalMiddlewares,
   ICreateSession,
   IGracefulExit,
   ICreateServer,
@@ -106,11 +104,6 @@ class DI {
         [SYMBOLS.Logger]
       )
       .inSingletonScope();
-    // 8. 注册全局中间件服务  同步get获取
-    this.container
-      .bind<IGlobalMiddlewares>(SYMBOLS.GlobalMiddlewares)
-      .to(GlobalMiddlewares)
-      .inSingletonScope();
     this.container.bind<Provider<App>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: App | undefined = undefined;
       return async (express: Application) => {
@@ -123,9 +116,6 @@ class DI {
           SYMBOLS.GracefulExit
         );
         const createServer = ctx.get<ICreateServer>(SYMBOLS.CreateServer);
-        const globalMiddlewares = ctx.get<IGlobalMiddlewares>(
-          SYMBOLS.GlobalMiddlewares
-        );
         const dataSource = await ctx.getAsync<DataSource | undefined>(
           SYMBOLS.DataSource
         );
@@ -138,7 +128,6 @@ class DI {
             createSession,
             createServer,
             gracefulExit,
-            globalMiddlewares,
             dataSource,
             redis
           );

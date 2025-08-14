@@ -13,7 +13,6 @@ export const SYMBOLS = {
   CreateServer: Symbol.for("CreateServer"),
   ClientIp: Symbol.for("ClientIp"),
   IocAdapter: Symbol.for("IocAdapter"),
-  GlobalMiddlewares: Symbol.for("GlobalMiddlewares"),
 };
 export const IV_LENGTH = 16;
 export const ENC_DEFAULT_KEY = "default-anymejs-unsafe-key";

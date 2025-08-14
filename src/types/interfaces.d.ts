@@ -1,13 +1,56 @@
-import { type RedisOptions } from "ioredis";
+import { type RedisOptions, type Redis } from "ioredis";
 import { type SessionOptions } from "express-session";
 import { type DataSourceOptions } from "typeorm";
 import { type RoutingControllersOptions } from "routing-controllers";
-import { type HealthCheckMap } from "@godaddy/terminus";
 import { type Application, type RequestHandler } from "express";
-import { type Redis } from "ioredis";
 import { type Logger, type Logform, type transports } from "winston";
 import { type DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
-import { type Server } from "node:http";
+
+export interface HealthCheckMap {
+  verbatim?: boolean;
+  __unsafeExposeStackTraces?: boolean;
+  [key: string]: HealthCheck | boolean | undefined;
+}
+/**
+ * 自定义Server接口，用于替换直接依赖node:http的Server类型
+ */
+export interface IServer {
+  /** 服务器是否正在监听 */
+  listening: boolean;
+
+  /**
+   * 启动服务器监听
+   * @param port 端口号
+   * @param hostname 主机名
+   * @param backlog 连接队列长度
+   * @param callback 启动完成回调函数
+   */
+  listen(
+    port: number,
+    hostname: string,
+    backlog: number,
+    callback: () => void
+  ): this;
+  listen(port: number, hostname: string, callback: () => void): this;
+  listen(port: number, callback: () => void): this;
+  listen(port: number, hostname?: string, backlog?: number): this;
+
+  /**
+   * 关闭服务器
+   * @param callback 关闭完成回调函数
+   */
+  close(callback?: (error?: Error) => void): this;
+
+  /**
+   * 添加事件监听器
+   * @param event 事件名称
+   * @param listener 事件监听器
+   */
+  on(event: string, listener: (...args: any[]) => void): this;
+  on(event: "error", listener: (err: Error) => void): this;
+  on(event: "listening", listener: () => void): this;
+}
+
 /**
  * 应用程序配置接口，包含所有可配置项
  */
@@ -72,10 +115,10 @@ export interface IGracefulExit {
 
   /**
    * 为 HTTP 服务器设置优雅退出
-   * @param server HTTP 服务器实例
+   * @param IServer HTTP 服务器实例
    * @param options 可选配置，包含超时时间和监听的信号
    */
-  register<T extends Server>(
+  register<T extends IServer>(
     server: T,
     options?: {
       timeout?: number;
@@ -92,10 +135,10 @@ export interface ICreateServer {
   /**
    * 启动服务器
    * @param port 服务器监听的端口号
-   * @returns 解析为 Server 实例的 Promise
+   * @returns 解析为 IServer 实例的 Promise
    */
   init(app: Application, config: IConfig["server"]): ICreateServer;
-  bootstrap(port: number, options: IConfig["https"]): Promise<Server>;
+  bootstrap(port: number, options: IConfig["https"]): Promise<IServer>;
 }
 
 export interface ICreateSession {
@@ -106,11 +149,6 @@ export interface ICreateSession {
 export interface IHandler {
   name: string;
   handle: RequestHandler;
-}
-export interface IGlobalMiddlewares {
-  routers: Map<string, RequestHandler | RequestHandler[]>;
-  init(app: Application): IGlobalMiddlewares;
-  register(...handlers: (RequestHandler | IHandler)[]): void;
 }
 export interface LoadEnvOptions {
   cwd?: string;
