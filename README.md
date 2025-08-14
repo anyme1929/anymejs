@@ -86,7 +86,6 @@ HTTPS_CERT="path/to/cert.pem"
 import { defineConfig } from "@anyme/anymejs";
 const config = defineConfig({
   port: 3000,
-  public_path: "public",
   logger: {
     level: "info",
   },

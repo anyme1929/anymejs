@@ -55,7 +55,6 @@ export const ENV_KEY_VALUES = [
   },
 ];
 export default {
-  public_path: "public",
   port: 3000,
   logger: {
     level: "info",

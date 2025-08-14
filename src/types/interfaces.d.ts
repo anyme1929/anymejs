@@ -55,8 +55,6 @@ export interface IServer {
  * 应用程序配置接口，包含所有可配置项
  */
 export interface IConfig {
-  /** 静态资源公共目录路径 */
-  public_path: string;
   /** 应用监听端口号 */
   port: number;
   logger: {
