@@ -1,6 +1,6 @@
 import config, { ENV_KEY_VALUES } from "./default.config";
 import { pathToFileURL } from "node:url";
-import { extname, basename, join, resolve } from "node:path";
+import { extname, basename, join, resolve, isAbsolute } from "node:path";
 import { readFile } from "node:fs/promises";
 import fg from "fast-glob";
 import { type IConfig, type UserConfig } from "../types";
@@ -136,5 +136,18 @@ export class CoreConfig {
         }
       }
     }
+    this.resolveServerPaths();
+  }
+  private resolveServerPaths() {
+    const serverPaths = ["controllers", "middlewares", "interceptors"] as const;
+    serverPaths.forEach((key) => {
+      if (
+        this.#config.server?.[key]?.length === 1 &&
+        typeof this.#config.server?.[key][0] === "string"
+      ) {
+        const path = this.#config.server[key][0];
+        if (!isAbsolute(path)) this.merge(`server.${key}`, [resolve(path)]);
+      }
+    });
   }
 }

@@ -4,6 +4,7 @@ logs/**/*
 dist/**/*
 config/**/*
 controllers/**/*
+models/**/*
 .env
 .vscode/**/*
 ssl/**/*
