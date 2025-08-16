@@ -3,8 +3,7 @@ import { Anyme } from "./core/anyme";
 import GracefulExit from "./utils/graceful-exit";
 import InversifyAdapter from "./utils/inversify-adapter";
 import RouteRegistrar from "./utils/route-registrar";
-import { type EntityTarget, type ObjectLiteral } from "typeorm";
-import { Container, inject, type Provider } from "inversify";
+import { Container, inject } from "inversify";
 import {
   CreateDataSource,
   CreateRedis,
@@ -19,6 +18,9 @@ import type {
   IocAdapter,
   DataSource,
   Redis,
+  EntityTarget,
+  ObjectLiteral,
+  Provider,
 } from "./types";
 import { SYMBOLS } from "./utils/constants";
 type AppProvider = (express?: Application) => Promise<Anyme>;
@@ -33,16 +35,14 @@ class DI {
     // 0. 注册配置服务 getAsync 获取
     this.container
       .bind(SYMBOLS.Config)
-      .toDynamicValue(async () => await new CoreConfig().load())
-      .inSingletonScope();
+      .toDynamicValue(async () => await new CoreConfig().load());
 
     this.container
       .bind(SYMBOLS.Logger)
       .toResolvedValue(
         (config: IConfig) => new WinstonLogger(config.logger).logger,
         [SYMBOLS.Config]
-      )
-      .inSingletonScope();
+      );
 
     this.container
       .bind<IocAdapter>(SYMBOLS.IocAdapter)
@@ -53,8 +53,7 @@ class DI {
       .toResolvedValue(
         (config: IConfig) => CreateDataSource(config.db),
         [SYMBOLS.Config]
-      )
-      .inSingletonScope();
+      );
 
     // 注册 Redis 服务
     this.container
@@ -62,8 +61,7 @@ class DI {
       .toResolvedValue(
         (config: IConfig, logger: Logger) => CreateRedis(config.redis, logger),
         [SYMBOLS.Config, SYMBOLS.Logger]
-      )
-      .inSingletonScope();
+      );
 
     // 注册会话处理服务
     this.container
@@ -71,15 +69,13 @@ class DI {
       .toResolvedValue(
         (config: IConfig) => new CreateSession(config.session.client),
         [SYMBOLS.Config]
-      )
-      .inSingletonScope();
+      );
     this.container
       .bind(SYMBOLS.GracefulExit)
       .toResolvedValue(
         (logger: Logger) => new GracefulExit(logger),
         [SYMBOLS.Logger]
-      )
-      .inSingletonScope();
+      );
 
     // 6. 注册服务器创建服务
     this.container
@@ -88,12 +84,8 @@ class DI {
         (iocAdapter: IocAdapter, logger: Logger) =>
           new CreateServer(iocAdapter, logger),
         [SYMBOLS.IocAdapter, SYMBOLS.Logger]
-      )
-      .inSingletonScope();
-    this.container
-      .bind(SYMBOLS.RouteRegistrar)
-      .to(RouteRegistrar)
-      .inSingletonScope();
+      );
+    this.container.bind(SYMBOLS.RouteRegistrar).to(RouteRegistrar);
     this.container.bind<Provider<Anyme>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: Anyme | undefined = undefined;
       return async (express: Application) => {
@@ -130,6 +122,10 @@ class DI {
   }
   static createApp = (express: Application): Promise<Anyme> =>
     this.container.get<AppProvider>(SYMBOLS.App)(express);
+  static injectLogger = (): ParameterDecorator => inject(SYMBOLS.Logger);
+  static injectRedis = (): ParameterDecorator => inject(SYMBOLS.Redis);
+  static injectDataSource = (): ParameterDecorator =>
+    inject(SYMBOLS.DataSource);
   static injectRepository = <T extends ObjectLiteral>(
     entity: EntityTarget<T>
   ): ParameterDecorator => {

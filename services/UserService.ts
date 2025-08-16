@@ -1,6 +1,7 @@
 // src/service/UserService.ts
 import { User } from "../models/User";
-import { injectRepository, Repository } from "../src";
+import { Repository } from "typeorm";
+import { injectRepository } from "../src";
 export class UserService {
   constructor(
     @injectRepository(User) private userRepository: Repository<User>
