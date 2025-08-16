@@ -7,8 +7,4 @@ export const injectRepository = DI.injectRepository;
 export const injectDataSource = DI.injectDataSource;
 export const injectRedis = DI.injectRedis;
 export const injectLogger = DI.injectLogger;
-export const Config = DI.injectConfig;
-import express from "express";
-createApp(express()).then((app) => {
-  app.bootstrap();
-});
+export const injectConfig = DI.injectConfig;

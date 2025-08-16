@@ -20,9 +20,6 @@ const plugins = [
       include: ["src/**/*.ts"],
     },
   }),
-  // typescript({
-  //   tsconfig: "./tsconfig.json",
-  // }),
   terser({
     format: {
       comments: false,
@@ -39,7 +36,6 @@ const baseConfig = {
 };
 export default defineConfig([
   {
-    ...baseConfig,
     output: {
       dir: "dist/esm",
       format: "esm",
@@ -47,14 +43,15 @@ export default defineConfig([
       // preserveModules: true,
       // preserveModulesRoot: "src",
     },
+    ...baseConfig,
   },
   {
-    ...baseConfig,
     output: {
       dir: "dist/cjs",
       format: "cjs",
       sourcemap: "inline",
     },
+    ...baseConfig,
   },
   {
     input: "src/index.ts",
