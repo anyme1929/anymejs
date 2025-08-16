@@ -131,13 +131,21 @@ class DI {
   }
   static createApp = (express: Application): Promise<Anyme> =>
     this.container.get<AppProvider>(SYMBOLS.App)(express);
-  static injectLogger = () => inject(SYMBOLS.Logger);
-  static injectRedis = () => inject(SYMBOLS.Redis);
-  static injectDataSource = () => inject(SYMBOLS.DataSource);
-  static injectConfig = () => inject(SYMBOLS.ConfigProvider);
+  static injectLogger = (): MethodDecorator &
+    ParameterDecorator &
+    PropertyDecorator => inject(SYMBOLS.Logger);
+  static injectRedis = (): MethodDecorator &
+    ParameterDecorator &
+    PropertyDecorator => inject(SYMBOLS.Redis);
+  static injectDataSource = (): MethodDecorator &
+    ParameterDecorator &
+    PropertyDecorator => inject(SYMBOLS.DataSource);
+  static injectConfig = (): MethodDecorator &
+    ParameterDecorator &
+    PropertyDecorator => inject(SYMBOLS.ConfigProvider);
   static injectRepository = <T extends ObjectLiteral>(
     entity: EntityTarget<T>
-  ): ParameterDecorator => {
+  ): MethodDecorator & ParameterDecorator & PropertyDecorator => {
     // 获取实体唯一标识
     const entityName =
       typeof entity === "function"
