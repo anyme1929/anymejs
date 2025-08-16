@@ -4,6 +4,8 @@
  */
 export const SYMBOLS = {
   App: Symbol.for("App"),
+  CoreConfig: Symbol.for("CoreConfig"),
+  ConfigProvider: Symbol.for("ConfigProvider"),
   Config: Symbol.for("Config"),
   DataSource: Symbol.for("DataSource"),
   Redis: Symbol.for("Redis"),

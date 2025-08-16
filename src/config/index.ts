@@ -3,10 +3,11 @@ import { pathToFileURL } from "node:url";
 import { extname, basename, join, resolve, isAbsolute } from "node:path";
 import { readFile } from "node:fs/promises";
 import fg from "fast-glob";
-import { type IConfig, type UserConfig } from "../types";
+import { type IConfig } from "../types";
 import { deepMerge, isEmpty, set } from "../utils";
 export class CoreConfig {
   #config: IConfig = config;
+  private isLoading: boolean = false;
   private path: string = process.env.CONFIG_PATH || "./config";
   private env: string = process.env.NODE_ENV || "development";
   private ignore: string[] = ["**/node_modules/**", "**/dist/**", "**/*.d.ts"];
@@ -16,19 +17,35 @@ export class CoreConfig {
     production: ["default.config", "prod.config"],
     test: ["default.config", "test.config"],
   };
-  async load(): Promise<IConfig> {
-    const files = await this.loadConfigFiles();
-    if (!isEmpty(files)) await this.loadConfig(...files);
+  async load(name?: string) {
+    if (!name) return await this.loadCoreConfig();
+    else {
+      const path = await this.loadPaths(name);
+      return await this.loadConfig(...path);
+    }
+  }
+  private async loadCoreConfig() {
+    if (this.isLoading) return this.#config;
+    let files = await this.loadPaths();
+    files = this.filterCore(files);
+    if (!isEmpty(files))
+      this.#config = deepMerge(
+        this.#config,
+        ...(await this.loadConfig(...files))
+      );
     await this.loadEnvConfig();
     await this.validate();
+    this.isLoading = true;
     return this.#config;
   }
-  private async loadConfigFiles() {
-    const files = await fg(this.getPath(), {
+  private async loadPaths(name?: string) {
+    return await fg(this.getPattern(name), {
       onlyFiles: true,
       ignore: this.ignore,
       absolute: true,
     });
+  }
+  private filterCore(files: string[]) {
     if (isEmpty(files)) return [];
     const keywords = this.keywords[this.env] || [];
     // 按文件名（不含扩展名）分组
@@ -66,23 +83,27 @@ export class CoreConfig {
     }
     return result;
   }
-  private getPath() {
-    const ext = this.order.join(",");
-    return join(this.path, `*.config{${ext}}`).replace(/\\/g, "/");
-  }
   private async loadConfig(...paths: string[]) {
     try {
       const promises = paths.map((path) => this.resolve(path));
-      const configs = (await Promise.all(promises)).filter(
-        (config) => !isEmpty(config)
-      );
-      this.#config = deepMerge(this.#config, ...configs);
+      return (await Promise.all(promises)).filter((config) => !isEmpty(config));
     } catch (error) {
       console.error("❌ Failed to load config:", error);
       throw error;
     }
   }
-  private async resolve(path: string): Promise<UserConfig> {
+  private async loadEnvConfig() {
+    ENV_KEY_VALUES.forEach((item) => {
+      if (process.env[item.value]) {
+        if (item.type === "number")
+          this.set(item.key, parseInt(process.env[item.value]!));
+        else if (item.type === "resolve")
+          this.set(item.key, resolve(process.env[item.value]!));
+        else this.set(item.key, process.env[item.value]!);
+      }
+    });
+  }
+  private async resolve(path: string) {
     if (extname(path) === ".json")
       try {
         return JSON.parse(await readFile(path, "utf-8"));
@@ -102,18 +123,11 @@ export class CoreConfig {
       return mod?.__esModule && mod.default ? mod.default : mod;
     }
   }
-  private async loadEnvConfig() {
-    ENV_KEY_VALUES.forEach((item) => {
-      if (process.env[item.value]) {
-        if (item.type === "number")
-          this.merge(item.key, parseInt(process.env[item.value]!));
-        else if (item.type === "resolve")
-          this.merge(item.key, resolve(process.env[item.value]!));
-        else this.merge(item.key, process.env[item.value]!);
-      }
-    });
+  private getPattern(name?: string) {
+    const ext = this.order.join(",");
+    return join(this.path, `${name ?? "*"}.config{${ext}}`).replace(/\\/g, "/");
   }
-  private merge(str: string, value: any) {
+  private set(str: string, value: any) {
     this.#config = deepMerge(this.#config, set(str, value));
   }
   private async validate() {
@@ -146,7 +160,7 @@ export class CoreConfig {
         typeof this.#config.server?.[key][0] === "string"
       ) {
         const path = this.#config.server[key][0];
-        if (!isAbsolute(path)) this.merge(`server.${key}`, [resolve(path)]);
+        if (!isAbsolute(path)) this.set(`server.${key}`, [resolve(path)]);
       }
     });
   }

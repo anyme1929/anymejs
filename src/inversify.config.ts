@@ -33,10 +33,19 @@ class DI {
   static register() {
     if (this.registered) return;
     // 0. 注册配置服务 getAsync 获取
+    this.container.bind(SYMBOLS.CoreConfig).to(CoreConfig);
+    this.container
+      .bind<Provider<any[] | IConfig>>(SYMBOLS.ConfigProvider)
+      .toProvider((ctx) => {
+        const coreConfig = ctx.get<CoreConfig>(SYMBOLS.CoreConfig);
+        return async (name?: string) => await coreConfig.load(name);
+      });
     this.container
       .bind(SYMBOLS.Config)
-      .toDynamicValue(async () => await new CoreConfig().load());
-
+      .toResolvedValue(
+        async (coreConfig: CoreConfig) => await coreConfig.load(),
+        [SYMBOLS.CoreConfig]
+      );
     this.container
       .bind(SYMBOLS.Logger)
       .toResolvedValue(
@@ -122,10 +131,10 @@ class DI {
   }
   static createApp = (express: Application): Promise<Anyme> =>
     this.container.get<AppProvider>(SYMBOLS.App)(express);
-  static injectLogger = (): ParameterDecorator => inject(SYMBOLS.Logger);
-  static injectRedis = (): ParameterDecorator => inject(SYMBOLS.Redis);
-  static injectDataSource = (): ParameterDecorator =>
-    inject(SYMBOLS.DataSource);
+  static injectLogger = () => inject(SYMBOLS.Logger);
+  static injectRedis = () => inject(SYMBOLS.Redis);
+  static injectDataSource = () => inject(SYMBOLS.DataSource);
+  static injectConfig = () => inject(SYMBOLS.ConfigProvider);
   static injectRepository = <T extends ObjectLiteral>(
     entity: EntityTarget<T>
   ): ParameterDecorator => {
