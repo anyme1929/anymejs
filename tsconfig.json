@@ -9,6 +9,7 @@
     "forceConsistentCasingInFileNames": true, // 强制文件名大小写一致
     "moduleResolution": "bundler", // 使用Node.js模块解析策略
     "sourceMap": true, // 生成source map文件
+    "inlineSources": true, // 将source map文件内联到生成的代码中
     "experimentalDecorators": true, // 启用实验性装饰器语法
     "emitDecoratorMetadata": true, // 为装饰器生成元数据
     "resolveJsonModule": true,

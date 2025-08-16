@@ -1,10 +1,11 @@
 import { defineConfig } from "rollup";
-import typescript from "@rollup/plugin-typescript";
+//import typescript from "@rollup/plugin-typescript";
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
 import terser from "@rollup/plugin-terser";
 import nodeExternals from "rollup-plugin-node-externals";
+import typescript from "rollup-plugin-typescript2";
 import dts from "rollup-plugin-dts";
 const plugins = [
   nodeExternals({
@@ -15,10 +16,13 @@ const plugins = [
   commonjs(),
   json(),
   typescript({
-    tsconfig: "./tsconfig.json",
-    sourceMap: true,
-    inlineSources: true,
+    tsconfigOverride: {
+      include: ["src/**/*.ts"],
+    },
   }),
+  // typescript({
+  //   tsconfig: "./tsconfig.json",
+  // }),
   terser({
     format: {
       comments: false,
@@ -29,36 +33,28 @@ const plugins = [
     },
   }),
 ];
+const baseConfig = {
+  input: "src/index.ts",
+  plugins: [...plugins],
+};
 export default defineConfig([
-  // {
-  //   input: "src/index.ts",
-  //   watch: {
-  //     include: "src/**/*",
-  //     chokidar: {
-  //       usePolling: true,
-  //       interval: 100,
-  //     },
-  //   },
-  // },
   {
-    input: "src/index.ts",
+    ...baseConfig,
     output: {
       dir: "dist/esm",
       format: "esm",
-      sourcemap: true,
+      sourcemap: "inline",
       // preserveModules: true,
-      // preserveModulesRoot: 'src'
+      // preserveModulesRoot: "src",
     },
-    plugins,
   },
   {
-    input: "src/index.ts",
+    ...baseConfig,
     output: {
       dir: "dist/cjs",
       format: "cjs",
-      sourcemap: true,
+      sourcemap: "inline",
     },
-    plugins,
   },
   {
     input: "src/index.ts",

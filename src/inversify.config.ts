@@ -3,7 +3,8 @@ import { Anyme } from "./core/anyme";
 import GracefulExit from "./utils/graceful-exit";
 import InversifyAdapter from "./utils/inversify-adapter";
 import RouteRegistrar from "./utils/route-registrar";
-import { Container, type Provider } from "inversify";
+import { type EntityTarget, type ObjectLiteral } from "typeorm";
+import { Container, inject, type Provider } from "inversify";
 import {
   CreateDataSource,
   CreateRedis,
@@ -22,7 +23,10 @@ import type {
 import { SYMBOLS } from "./utils/constants";
 type AppProvider = (express?: Application) => Promise<Anyme>;
 class DI {
-  static container: Container = new Container();
+  static container: Container = new Container({
+    autobind: true,
+    defaultScope: "Singleton",
+  });
   static registered = false;
   static register() {
     if (this.registered) return;
@@ -124,8 +128,28 @@ class DI {
     });
     this.registered = true;
   }
-  static createApp = (express: Application): Promise<Anyme> => {
-    return this.container.get<AppProvider>(SYMBOLS.App)(express);
+  static createApp = (express: Application): Promise<Anyme> =>
+    this.container.get<AppProvider>(SYMBOLS.App)(express);
+  static injectRepository = <T extends ObjectLiteral>(
+    entity: EntityTarget<T>
+  ): ParameterDecorator => {
+    // 获取实体唯一标识
+    const entityName =
+      typeof entity === "function"
+        ? entity.name
+        : (entity as any).name || entity.toString();
+    const token = Symbol.for(`Repository_${entityName}`);
+    if (!this.container.isBound(token))
+      this.container
+        .bind(token)
+        .toResolvedValue(
+          (dataSource: DataSource) => {
+            return dataSource.getRepository(entity);
+          },
+          [SYMBOLS.DataSource]
+        )
+        .inRequestScope();
+    return inject(token);
   };
 }
 DI.register();
