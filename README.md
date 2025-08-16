@@ -238,9 +238,10 @@ src/
 - InversifyJS v7
 - TypeORM v0.3
 - Redis (ioredis)
-- Helmet 安全中间件
-- Morgan 日志中间件
-- Routing-controllers 路由控制
+- Socket.IO
+- TypeScript v5
+- Routing-controllers 基于装饰器的路由
+- Routing-controllers-openapi 生成 OpenAPI 文档
 
 ## 许可证
 

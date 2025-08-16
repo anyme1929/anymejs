@@ -44,11 +44,12 @@
   "dependencies": {
     "@godaddy/terminus": "^4.12.1",
     "fast-glob": "^3.3.3",
+    "cors": "^2.8.5",
     "morgan": "^1.10.1"
   },
   "peerDependencies": {
     "inversify": "^7.7.0",
-    "cors": "^2.8.5",
+    
     "express": "^5.1.0",
     "express-error-handler": "^1.1.0",
     "express-session": "^1.18.2",
