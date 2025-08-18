@@ -1,12 +1,8 @@
-import {
-  useExpressServer,
-  type RoutingControllersOptions,
-  useContainer,
-} from "routing-controllers";
+import { useExpressServer, useContainer } from "routing-controllers";
 import { createServer as createHttps } from "node:https";
 import { createServer as createHttp } from "node:http";
-import { resolve, isAbsolute } from "node:path";
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
+import { getAbsolutePath } from "../utils";
 import type {
   Application,
   IocAdapter,
@@ -16,15 +12,20 @@ import type {
   Logger,
 } from "../types";
 export default class CreateServer implements ICreateServer {
+  private isInitialized: boolean = false;
   private app: Application | null = null;
+  private config: IConfig["server"] | null = null;
   private server: IServer | null = null;
   private pending: Promise<IServer> | null = null;
   constructor(iocAdapter: IocAdapter, private readonly logger: Logger) {
     useContainer(iocAdapter);
   }
-  init(app: Application, config: RoutingControllersOptions) {
-    if (this.app) return this;
-    this.app = useExpressServer(app, config);
+  init(app: Application, config: IConfig["server"]) {
+    if (this.isInitialized) return this;
+    this.config = config;
+    this.setProxy();
+    this.app = useExpressServer(app, config.route);
+    this.isInitialized = true;
     return this;
   }
   /**
@@ -32,19 +33,20 @@ export default class CreateServer implements ICreateServer {
    * @param port 服务器监听的端口号
    * @returns 服务器实例的Promise
    */
-  async bootstrap(port: number, options: IConfig["https"]): Promise<IServer> {
-    if (!this.app) throw new Error("Server not initialized");
+  async bootstrap(port?: number): Promise<IServer> {
+    if (!this.isInitialized) throw new Error("Server not initialized");
     if (this.pending) return this.pending;
+    const { https, port: httpPort } = this.config!;
     this.pending = new Promise<IServer>((res, rej) => {
       if (this.server?.listening) return rej("Server already running");
-      this.createServer(options).then(({ ssl, server }) => {
+      this.createServer().then(({ ssl, server }) => {
+        const scheme = ssl ? "https" : "http";
+        port = port ?? (ssl ? https.port : httpPort);
         this.server = server
-          .listen(ssl ? options.ssl.port : port, () => {
+          .listen(port, () => {
             res(this.server!);
             this.logger.info(
-              `🚀 Server running on ${ssl ? "https" : "http"}://localhost:${
-                ssl ? 443 : port
-              }`
+              `🚀 Server running on ${scheme}://localhost:${port}`
             );
           })
           .on("error", (error) => rej(error));
@@ -53,32 +55,55 @@ export default class CreateServer implements ICreateServer {
     });
     return this.pending;
   }
-  private async createServer(options: IConfig["https"]) {
-    if (options.enable) {
-      const keyPath = isAbsolute(options.ssl.key)
-        ? options.ssl.key
-        : resolve(options.ssl.key);
-      const certPath = isAbsolute(options.ssl.cert)
-        ? options.ssl.cert
-        : resolve(options.ssl.cert);
-      const [key, cert] = await Promise.allSettled([
-        readFile(keyPath),
-        readFile(certPath),
-      ]);
-      if (key.status === "fulfilled" && cert.status === "fulfilled") {
-        const ssl = {
-          key: key.value,
-          cert: cert.value,
-        };
-        return {
-          server: createHttps(ssl, this.app!),
-          ssl: true,
-        };
-      } else this.logger.warn("ssl key or cert is not found");
+  private async setProxy() {
+    const { proxy } = this.config!;
+    if (proxy) this.app?.set("trust proxy", proxy);
+  }
+  private async createServer() {
+    const { ssl, enable } = this.config!.https;
+    if (!enable)
+      return {
+        server: createHttp(this.app!),
+        ssl: false,
+      };
+    // 读取 SSL 证书和密钥
+    const [key, cert] = await Promise.all([
+      this.readFile(ssl.key),
+      this.readFile(ssl.cert),
+    ]);
+
+    if (!key || !cert) {
+      this.logger.warn("SSL key or certificate not found");
+      return { server: createHttp(this.app!), ssl: false };
+    }
+    let ca: Buffer[] | undefined;
+    if (ssl.requestCert && ssl.ca?.length) {
+      ca = (await Promise.allSettled(ssl.ca.map(this.readFile)))
+        .filter(
+          (p): p is PromiseFulfilledResult<Buffer> => p.status === "fulfilled"
+        )
+        .map((p) => p.value);
+
+      if (!ca.length) this.logger.warn("SSL CA certificates not found");
     }
     return {
-      server: createHttp(this.app!),
-      ssl: false,
+      server: createHttps(
+        {
+          ...ssl,
+          key,
+          cert,
+          ca: ca?.length ? ca : undefined,
+        },
+        this.app!
+      ),
+      ssl: true,
     };
+  }
+  private async readFile(path: string): Promise<Buffer | null> {
+    try {
+      return readFileSync(getAbsolutePath(path));
+    } catch {
+      return null;
+    }
   }
 }

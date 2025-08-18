@@ -55,8 +55,6 @@ export interface IServer {
  * 应用程序配置接口，包含所有可配置项
  */
 export interface IConfig {
-  /** 应用监听端口号 */
-  port: number;
   logger: {
     level: "info" | "debug" | "warn" | "error" | "http" | "verbose";
     format: Logform.Format;
@@ -91,14 +89,23 @@ export interface IConfig {
     client: SessionOptions;
   };
   /** 路由配置选项 */
-  server: RoutingControllersOptions;
-  https: {
-    enable: boolean;
-    ssl: {
+  server: {
+    /** 应用监听端口号 */
+    port: number;
+    proxy: boolean | string | string[];
+    https: {
+      enable: boolean;
       port: number;
-      key: string;
-      cert: string;
+      ssl: {
+        key: string;
+        cert: string;
+        passphrase?: string;
+        requestCert?: boolean;
+        rejectUnauthorized?: boolean;
+        ca?: string[];
+      };
     };
+    route: RoutingControllersOptions;
   };
 }
 /**
@@ -136,7 +143,7 @@ export interface ICreateServer {
    * @returns 解析为 IServer 实例的 Promise
    */
   init(app: Application, config: IConfig["server"]): ICreateServer;
-  bootstrap(port: number, options: IConfig["https"]): Promise<IServer>;
+  bootstrap(port?: number): Promise<IServer>;
 }
 
 export interface ICreateSession {
@@ -154,4 +161,86 @@ export interface LoadEnvOptions {
 }
 export interface IRouteRegistrar {
   register(app: Application): void;
+}
+export interface PackageJson {
+  name: string;
+  version: string;
+  description?: string;
+  keywords?: string[];
+  homepage?: string;
+  bugs?: {
+    url?: string;
+    email?: string;
+  };
+  license?: string;
+  author?:
+    | string
+    | {
+        name: string;
+        email?: string;
+        url?: string;
+      };
+  contributors?: (
+    | string
+    | {
+        name: string;
+        email?: string;
+        url?: string;
+      }
+  )[];
+  files?: string[];
+  main?: string;
+  browser?: string;
+  bin?: string | Record<string, string>;
+  man?: string | string[];
+  directories?: {
+    lib?: string;
+    bin?: string;
+    man?: string;
+    doc?: string;
+    example?: string;
+    test?: string;
+  };
+  repository?:
+    | {
+        type: string;
+        url: string;
+        directory?: string;
+      }
+    | string;
+  scripts?: Record<string, string>;
+  config?: Record<string, any>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  bundledDependencies?: string[];
+  engines?: {
+    node?: string;
+    npm?: string;
+    yarn?: string;
+  };
+  os?: string[];
+  cpu?: string[];
+  private?: boolean;
+  publishConfig?: {
+    access?: "public" | "restricted";
+    registry?: string;
+    tag?: string;
+  };
+  workspaces?:
+    | string[]
+    | {
+        packages?: string[];
+        nohoist?: string[];
+      };
+}
+export interface CtxArgs {
+  name: string;
+  version: string;
+  pkg: PackageJson;
+  env: string;
+  ENC: (text: string) => string;
+  ROOT: string;
+  HOME: string;
 }

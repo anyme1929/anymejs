@@ -43,16 +43,17 @@
   "packageManager": "pnpm@10.13.1",
   "dependencies": {
     "@godaddy/terminus": "^4.12.1",
-    "fast-glob": "^3.3.3",
     "cors": "^2.8.5",
+    "express-rate-limit": "^8.0.1",
+    "express-slow-down": "^3.0.0",
+    "fast-glob": "^3.3.3",
     "morgan": "^1.10.1"
   },
   "peerDependencies": {
-    "inversify": "^7.7.0",
-    
     "express": "^5.1.0",
     "express-error-handler": "^1.1.0",
     "express-session": "^1.18.2",
+    "inversify": "^7.7.0",
     "ioredis": "^5.6.1",
     "mysql2": "^3.14.2",
     "reflect-metadata": "^0.2.2",

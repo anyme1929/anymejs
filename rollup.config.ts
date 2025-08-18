@@ -20,15 +20,15 @@ const plugins = [
       include: ["src/**/*.ts"],
     },
   }),
-  terser({
-    format: {
-      comments: false,
-    },
-    compress: {
-      drop_console: true,
-      drop_debugger: true,
-    },
-  }),
+  // terser({
+  //   format: {
+  //     comments: false,
+  //   },
+  //   compress: {
+  //     drop_console: true,
+  //     drop_debugger: true,
+  //   },
+  // }),
 ];
 const baseConfig = {
   input: "src/index.ts",
@@ -39,9 +39,9 @@ export default defineConfig([
     output: {
       dir: "dist/esm",
       format: "esm",
-      sourcemap: "inline",
-      // preserveModules: true,
-      // preserveModulesRoot: "src",
+      sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: "src",
     },
     ...baseConfig,
   },
@@ -49,7 +49,9 @@ export default defineConfig([
     output: {
       dir: "dist/cjs",
       format: "cjs",
-      sourcemap: "inline",
+      sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: "src",
     },
     ...baseConfig,
   },

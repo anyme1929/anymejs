@@ -3,11 +3,11 @@ import { format } from "winston";
 import { IConfig } from "../types";
 export const ENV_KEY_VALUES = [
   {
-    key: "port",
+    key: "server.port",
     value: "PORT",
     type: "number",
   },
-  { key: "server.routePrefix", value: "API_PREFIX", type: "string" },
+  { key: "server.route.routePrefix", value: "API_PREFIX", type: "string" },
   { key: "logger.level", value: "LOG_LEVEL", type: "string" },
   { key: "db.client.host", value: "DB_HOST", type: "string" },
   {
@@ -54,8 +54,7 @@ export const ENV_KEY_VALUES = [
     type: "resolve",
   },
 ];
-export default {
-  port: 3000,
+export const CONFIG = {
   logger: {
     level: "info",
     format: format.combine(
@@ -131,23 +130,27 @@ export default {
     },
   },
   server: {
-    cors: {
-      origin: "*",
-      methods: "GET,POST,PUT,DELETE,OPTIONS",
-      credentials: false,
-    },
-    development: process.env.NODE_ENV === "development",
-    routePrefix: "",
-    controllers: [resolve("src/controllers/**/*.{ts,js,mjs,cjs}")],
-    middlewares: [resolve("src/middlewares/**/*.{ts,js,mjs,cjs}")],
-    interceptors: [resolve("src/interceptors/**/*.{ts,js,mjs,cjs}")],
-  },
-  https: {
-    enable: false,
-    ssl: {
+    port: 3000,
+    proxy: false,
+    https: {
+      enable: false,
       port: 443,
-      key: "./ssl/server.key",
-      cert: "./ssl/server.crt",
+      ssl: {
+        key: "./ssl/server.key",
+        cert: "./ssl/server.crt",
+      },
+    },
+    route: {
+      cors: {
+        origin: "*",
+        methods: "GET,POST,PUT,DELETE,OPTIONS",
+        credentials: false,
+      },
+      development: process.env.NODE_ENV === "development",
+      routePrefix: "",
+      controllers: [resolve("src/controllers/**/*.{ts,js,mjs,cjs}")],
+      middlewares: [resolve("src/middlewares/**/*.{ts,js,mjs,cjs}")],
+      interceptors: [resolve("src/interceptors/**/*.{ts,js,mjs,cjs}")],
     },
   },
 } as IConfig;

@@ -240,6 +240,7 @@ src/
 - Redis (ioredis)
 - Socket.IO
 - TypeScript v5
+- express-sse sse 服务器推送
 - Routing-controllers 基于装饰器的路由
 - Routing-controllers-openapi 生成 OpenAPI 文档
 

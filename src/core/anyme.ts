@@ -30,7 +30,7 @@ export class Anyme {
       await this.initialize();
       this.server = await this.createServer
         .init(this.app, this.config.server)
-        .bootstrap(port || this.config.port, this.config.https);
+        .bootstrap(port);
       this.gracefulExit.register(this.server, {
         healthCheck: {
           "/health": async () => ({

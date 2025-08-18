@@ -1,12 +1,18 @@
-import config, { ENV_KEY_VALUES } from "./default.config";
-import { pathToFileURL } from "node:url";
-import { extname, basename, join, resolve, isAbsolute } from "node:path";
-import { readFile } from "node:fs/promises";
+import { CONFIG, ENV_KEY_VALUES } from "./default.config";
+import { extname, basename, join, resolve } from "node:path";
 import fg from "fast-glob";
 import { type IConfig } from "../types";
-import { deepMerge, isEmpty, set } from "../utils";
+import {
+  deepMerge,
+  isEmpty,
+  set,
+  importModule,
+  getAbsolutePath,
+  ctx,
+  isFunction,
+} from "../utils";
 export class CoreConfig {
-  #config: IConfig = config;
+  #config: IConfig = CONFIG;
   private isLoading: boolean = false;
   private path: string = process.env.CONFIG_PATH || "./config";
   private env: string = process.env.NODE_ENV || "development";
@@ -18,11 +24,9 @@ export class CoreConfig {
     test: ["default.config", "test.config"],
   };
   async load(name?: string) {
-    if (!name) return await this.loadCoreConfig();
-    else {
-      const path = await this.loadPaths(name);
-      return await this.loadConfig(...path);
-    }
+    return name
+      ? await this.loadConfig(...(await this.loadPaths(name)))
+      : await this.loadCoreConfig();
   }
   private async loadCoreConfig() {
     if (this.isLoading) return this.#config;
@@ -85,8 +89,15 @@ export class CoreConfig {
   }
   private async loadConfig(...paths: string[]) {
     try {
-      const promises = paths.map((path) => this.resolve(path));
-      return (await Promise.all(promises)).filter((config) => !isEmpty(config));
+      return (
+        await Promise.all(
+          paths.map(async (path) => {
+            const module = await importModule(path);
+            const result = isFunction(module) ? module(ctx()) : module;
+            return isEmpty(result) ? null : result;
+          })
+        )
+      ).filter(Boolean);
     } catch (error) {
       console.error("❌ Failed to load config:", error);
       throw error;
@@ -102,26 +113,6 @@ export class CoreConfig {
         else this.set(item.key, process.env[item.value]!);
       }
     });
-  }
-  private async resolve(path: string) {
-    if (extname(path) === ".json")
-      try {
-        return JSON.parse(await readFile(path, "utf-8"));
-      } catch (error) {
-        console.error(`Failed to parse JSON config at ${path}:`, error);
-        return {};
-      }
-    if (typeof require === "undefined") {
-      // ESM 环境
-      const fileUrl = pathToFileURL(path).toString();
-      let mod = await import(fileUrl);
-      mod = mod?.default?.__esModule ? mod.default : mod;
-      return mod?.default || mod;
-    } else {
-      // CommonJS 环境
-      const mod = require(path);
-      return mod?.__esModule && mod.default ? mod.default : mod;
-    }
   }
   private getPattern(name?: string) {
     const ext = this.order.join(",");
@@ -156,11 +147,11 @@ export class CoreConfig {
     const serverPaths = ["controllers", "middlewares", "interceptors"] as const;
     serverPaths.forEach((key) => {
       if (
-        this.#config.server?.[key]?.length === 1 &&
-        typeof this.#config.server?.[key][0] === "string"
+        this.#config.server?.route?.[key]?.length === 1 &&
+        typeof this.#config.server?.route?.[key][0] === "string"
       ) {
-        const path = this.#config.server[key][0];
-        if (!isAbsolute(path)) this.set(`server.${key}`, [resolve(path)]);
+        const path = this.#config.server.route[key][0];
+        this.set(`server.route.${key}`, [getAbsolutePath(path)]);
       }
     });
   }

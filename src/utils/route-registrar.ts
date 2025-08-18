@@ -392,7 +392,7 @@ export default class RouteRegistrar implements IRouteRegistrar {
   private welcome(app: Application) {
     app.get("/", (req, res) => {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      return res.send(this.html);
+      res.send(this.html);
     });
   }
 

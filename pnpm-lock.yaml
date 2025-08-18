@@ -20,9 +20,15 @@ importers:
       express-error-handler:
         specifier: ^1.1.0
         version: 1.1.0
+      express-rate-limit:
+        specifier: ^8.0.1
+        version: 8.0.1(express@5.1.0)
       express-session:
         specifier: ^1.18.2
         version: 1.18.2
+      express-slow-down:
+        specifier: ^3.0.0
+        version: 3.0.0(express@5.1.0)
       fast-glob:
         specifier: ^3.3.3
         version: 3.3.3
@@ -1200,9 +1206,21 @@ packages:
   express-error-handler@1.1.0:
     resolution: {integrity: sha512-ftywa80qwdkH2e5J8HJmZ+ZTm8iGFuLgJe/SPswWF0QVNex74q9bFGOIoubHOvuFoW4T+2Bl9jO4TO8dqu4cVw==, tarball: https://registry.npmmirror.com/express-error-handler/-/express-error-handler-1.1.0.tgz}
 
+  express-rate-limit@8.0.1:
+    resolution: {integrity: sha512-aZVCnybn7TVmxO4BtlmnvX+nuz8qHW124KKJ8dumsBsmv5ZLxE0pYu7S2nwyRBGHHCAzdmnGyrc5U/rksSPO7Q==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: '>= 4.11'
+
   express-session@1.18.2:
     resolution: {integrity: sha512-SZjssGQC7TzTs9rpPDuUrR23GNZ9+2+IkA/+IJWmvQilTr5OSliEHGF+D9scbIpdC6yGtTI0/VhaHoVes2AN/A==, tarball: https://registry.npmmirror.com/express-session/-/express-session-1.18.2.tgz}
     engines: {node: '>= 0.8.0'}
+
+  express-slow-down@3.0.0:
+    resolution: {integrity: sha512-G/EQSH3IV2zukLwQnsCKEveswk8L31vDqiPS6eNkXYeSRhjHB3YSuKNoVSGjOVSqPGW1p6Oeq+b8l1PyWeVEmw==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: 4 || 5 || ^5.0.0-beta.1
 
   express@4.21.2:
     resolution: {integrity: sha512-28HqgMZAmih1Czt9ny7qr6ek2qddF4FclbMzwhCREB6OFfH+rXAnuNCwo1/wFvrtbgsQDb4kSbX9de9lFbrXnA==}
@@ -1462,6 +1480,10 @@ packages:
   ioredis@5.7.0:
     resolution: {integrity: sha512-NUcA93i1lukyXU+riqEyPtSEkyFq8tX90uL659J+qpCZ3rEdViB/APC58oAhIh3+bJln2hzdlZbBZsGNrlsR8g==, tarball: https://registry.npmmirror.com/ioredis/-/ioredis-5.7.0.tgz}
     engines: {node: '>=12.22.0'}
+
+  ip-address@10.0.1:
+    resolution: {integrity: sha512-NWv9YLW4PoW2B7xtzaS3NCot75m6nK7Icdv0o3lfMceJVRfSoQwqD4wEH5rLwoKJwUiZ/rfpiVBhnaF0FK4HoA==}
+    engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==, tarball: https://registry.npmmirror.com/ipaddr.js/-/ipaddr.js-1.9.1.tgz}
@@ -3765,6 +3787,11 @@ snapshots:
     dependencies:
       mout: 0.12.0
 
+  express-rate-limit@8.0.1(express@5.1.0):
+    dependencies:
+      express: 5.1.0
+      ip-address: 10.0.1
+
   express-session@1.18.2:
     dependencies:
       cookie: 0.7.2
@@ -3777,6 +3804,11 @@ snapshots:
       uid-safe: 2.1.5
     transitivePeerDependencies:
       - supports-color
+
+  express-slow-down@3.0.0(express@5.1.0):
+    dependencies:
+      express: 5.1.0
+      express-rate-limit: 8.0.1(express@5.1.0)
 
   express@4.21.2:
     dependencies:
@@ -4146,6 +4178,8 @@ snapshots:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
+
+  ip-address@10.0.1: {}
 
   ipaddr.js@1.9.1: {}
 

@@ -1,21 +1,22 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join, isAbsolute } from "node:path";
+import { resolve, isAbsolute, extname } from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   randomBytes,
   createCipheriv,
   createDecipheriv,
   createHash,
 } from "node:crypto";
-import type { DeepPartial, UserConfig, LoadEnvOptions } from "../types";
+import type {
+  DeepPartial,
+  UserConfig,
+  LoadEnvOptions,
+  ConfigOptions,
+  PackageJson,
+  CtxArgs,
+} from "../types";
 import { ENC_DEFAULT_KEY, IV_LENGTH } from "./constants";
-export function isObject(obj: unknown): obj is Record<string, unknown> {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    !Array.isArray(obj) &&
-    Object.prototype.toString.call(obj) === "[object Object]"
-  );
-}
+
 export function deepMerge<T extends Record<string, any>>(
   target: T,
   ...sources: DeepPartial<T>[]
@@ -30,6 +31,14 @@ export function deepMerge<T extends Record<string, any>>(
     }
   }
   return result;
+}
+export function isObject(obj: unknown): obj is Record<string, unknown> {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    !Array.isArray(obj) &&
+    Object.prototype.toString.call(obj) === "[object Object]"
+  );
 }
 export function isEmpty<T>(value: T) {
   if (!value) return true;
@@ -55,8 +64,11 @@ export function isEmpty<T>(value: T) {
   // 其他类型（如数字、布尔值等）视为非空
   return false;
 }
-export function defineConfig(config: UserConfig): UserConfig {
-  return config;
+export function isFunction(value: unknown): value is (...args: any[]) => any {
+  return (
+    typeof value === "function" &&
+    Object.prototype.toString.call(value) === "[object Function]"
+  );
 }
 // 专用文件加载函数
 function loadSingleEnv(path: string, override: boolean) {
@@ -64,14 +76,11 @@ function loadSingleEnv(path: string, override: boolean) {
   for (const line of envContent.split(/\r?\n/)) {
     // 跳过空行和注释
     if (!line.trim() || line.trim().startsWith("#")) continue;
-
     // 高效分割键值
     const sepIndex = line.indexOf("=");
     if (sepIndex === -1) continue;
-
     const key = line.slice(0, sepIndex).trim();
     if (!key) continue;
-
     // 处理值（包括引号）
     let value = line.slice(sepIndex + 1).trim();
     if (
@@ -80,7 +89,6 @@ function loadSingleEnv(path: string, override: boolean) {
     ) {
       value = value.slice(1, -1);
     }
-
     // 根据覆盖规则设置环境变量
     if (override || !(key in process.env)) {
       process.env[key] = value;
@@ -93,7 +101,7 @@ export function loadEnv(path?: string | string[], options?: LoadEnvOptions) {
   const override = options?.override || false;
   for (const p of paths) {
     // 解析绝对路径
-    const absolutePath = isAbsolute(p) ? p : join(cwd, p);
+    const absolutePath = isAbsolute(p) ? p : resolve(cwd, p);
     if (!existsSync(absolutePath)) continue;
     try {
       if (override) loadSingleEnv(absolutePath, true);
@@ -182,6 +190,30 @@ export function decrypt(encryptedText: string, key: string): string {
     throw error;
   }
 }
+export function getAbsolutePath(path: string) {
+  return isAbsolute(path) ? path : resolve(path);
+}
+export async function importModule<T = any>(path: string): Promise<T> {
+  path = getAbsolutePath(path);
+  if (extname(path) === ".json") {
+    try {
+      return JSON.parse(readFileSync(path, "utf-8"));
+    } catch (error) {
+      console.error(`Failed to parse JSON config at ${path}:`, error);
+      return {} as T;
+    }
+  }
+  if (typeof require === "undefined") {
+    // ESM 环境
+    let mod = await import(pathToFileURL(path).href);
+    mod = mod?.default?.__esModule ? mod.default : mod;
+    return mod?.default || mod;
+  } else {
+    // CommonJS 环境
+    const mod = require(path);
+    return mod?.__esModule && mod.default ? mod.default : mod;
+  }
+}
 export function ENC(text: string) {
   return decrypt(text, getEncryptionKey());
 }
@@ -197,4 +229,25 @@ export function set(str: string, value: any) {
   const lastKey = keys[keys.length - 1];
   current[lastKey] = value;
   return result;
+}
+function readPackage(): PackageJson {
+  const pkgPath = resolve("package.json");
+  if (!existsSync(pkgPath)) throw new Error("package.json not found");
+  return JSON.parse(readFileSync(pkgPath, "utf8"));
+}
+export function ctx(): CtxArgs {
+  const pkg = readPackage();
+  return {
+    name: pkg!.name ?? "anyme",
+    version: pkg!.version ?? "0.0.0",
+    pkg,
+    env: process.env.NODE_ENV || "development",
+    ENC,
+    ROOT: process.cwd(),
+    HOME: resolve(process.env.HOME_PATH || "src"),
+  };
+}
+export function defineConfig(configOptions: ConfigOptions): UserConfig {
+  if (!isFunction(configOptions)) return configOptions;
+  return configOptions(ctx());
 }
