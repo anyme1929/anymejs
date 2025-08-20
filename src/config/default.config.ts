@@ -18,17 +18,17 @@ export const ENV_KEY_VALUES = [
   { key: "db.client.username", value: "DB_USER", type: "string" },
   { key: "db.client.password", value: "DB_PASSWORD", type: "string" },
   { key: "db.client.database", value: "DB_DATABASE", type: "string" },
-  { key: "redis.client.name", value: "REDIS_MASTER_NAME", type: "string" },
-  { key: "redis.client.username", value: "REDIS_USERNAME", type: "string" },
-  { key: "redis.client.host", value: "REDIS_HOST", type: "string" },
+  { key: "redis.default.name", value: "REDIS_MASTER_NAME", type: "string" },
+  { key: "redis.default.username", value: "REDIS_USERNAME", type: "string" },
+  { key: "redis.default.host", value: "REDIS_HOST", type: "string" },
   {
-    key: "redis.client.port",
+    key: "redis.default.port",
     value: "REDIS_PORT",
     type: "number",
   },
-  { key: "redis.client.password", value: "REDIS_PASSWORD", type: "string" },
+  { key: "redis.default.password", value: "REDIS_PASSWORD", type: "string" },
   {
-    key: "redis.client.db",
+    key: "redis.default.db",
     value: "REDIS_DATABASE",
     type: "string",
   },
@@ -54,6 +54,7 @@ export const ENV_KEY_VALUES = [
     type: "resolve",
   },
 ];
+
 export const CONFIG = {
   logger: {
     level: "info",
@@ -110,8 +111,15 @@ export const CONFIG = {
   },
   redis: {
     enable: false,
-    client: {
+    default: {
       lazyConnect: true,
+    },
+    cluster: {
+      enable: false,
+      node: [],
+      options: {
+        lazyConnect: true,
+      },
     },
   },
   session: {
@@ -151,6 +159,28 @@ export const CONFIG = {
       controllers: [resolve("src/controllers/**/*.{ts,js,mjs,cjs}")],
       middlewares: [resolve("src/middlewares/**/*.{ts,js,mjs,cjs}")],
       interceptors: [resolve("src/interceptors/**/*.{ts,js,mjs,cjs}")],
+    },
+  },
+  limiter: {
+    enable: false,
+    rules: {
+      slowDownOptions: {
+        windowMs: 15 * 60 * 1000, // 15分钟
+        delayAfter: 100, // 允许100个请求后开始延迟
+        delayMs: (hits) => hits * 100, // 延迟 = 请求次数 * 100ms
+        maxDelayMs: 20000, // 最大延迟20秒
+      },
+      rateLimitOptions: {
+        windowMs: 15 * 60 * 1000, // 15分钟
+        limit: 1000, // 限制每个IP 15分钟内最多1000个请求
+        message: {
+          status: 429,
+          message: "Too many requests from this IP, please try again later.",
+        },
+        standardHeaders: true,
+        legacyHeaders: false,
+        skipSuccessfulRequests: true,
+      },
     },
   },
 } as IConfig;

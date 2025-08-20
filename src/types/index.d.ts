@@ -4,7 +4,7 @@ export {
   type EntityTarget,
   type ObjectLiteral,
 } from "typeorm";
-export { type Redis } from "ioredis";
+export { type Redis, type Cluster } from "ioredis";
 export { type Logger } from "winston";
 export { type Application, type RequestHandler, type Express } from "express";
 export { type SessionOptions } from "express-session";

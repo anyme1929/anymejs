@@ -18,11 +18,9 @@
   "ts-node": {
     "transpileOnly": true,
     "files": true,
-    "esm": true,
     "experimentalSpecifierResolution": "node",
     "compilerOptions": {
       "baseUrl": "./",
-      "outDir": "./dist",
       "target": "Es2020",
       "module": "NodeNext",
       "moduleResolution": "NodeNext",

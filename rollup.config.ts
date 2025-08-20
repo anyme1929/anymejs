@@ -1,11 +1,11 @@
 import { defineConfig } from "rollup";
-//import typescript from "@rollup/plugin-typescript";
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import json from "@rollup/plugin-json";
 import terser from "@rollup/plugin-terser";
 import nodeExternals from "rollup-plugin-node-externals";
 import typescript from "rollup-plugin-typescript2";
+
 import dts from "rollup-plugin-dts";
 const plugins = [
   nodeExternals({

@@ -1,7 +1,7 @@
 // 导入 express-session 中的 SessionData 类型和 Store 类
 import { type SessionData, Store } from "express-session";
 // 导入 ioredis 库
-import { type Redis } from "../types";
+import type { Redis, Cluster } from "../types";
 
 // 定义回调函数类型，可接受错误信息和数据作为参数
 type Callback = (_err?: unknown, _data?: any) => any;
@@ -34,7 +34,7 @@ interface Serializer {
  */
 interface RedisStoreOptions {
   // Redis 客户端实例
-  client: Redis;
+  client: Redis | Cluster;
   // 键的前缀，默认为 "sess:"
   prefix?: string;
   // 每次扫描的键数量，默认为 100
@@ -54,7 +54,7 @@ interface RedisStoreOptions {
  */
 export default class RedisStore extends Store {
   // Redis 客户端实例
-  client: Redis;
+  client: Redis | Cluster;
   // 键的前缀
   prefix: string;
   // 每次扫描的键数量
@@ -305,34 +305,48 @@ export default class RedisStore extends Store {
     // 返回计算得到的 TTL
     return ttl;
   }
+  private async getAllKeys(): Promise<string[]> {
+    const pattern = this.prefix + "*";
+    const keys = new Set<string>();
+
+    if (this.isCluster(this.client)) {
+      // 并行扫描所有主节点以提高效率
+      const nodes = this.client.nodes("master");
+      const scanPromises = nodes.map((node) => this.scanNode(node, pattern));
+      const results = await Promise.all(scanPromises);
+      results.forEach((nodeKeys) => {
+        nodeKeys.forEach((key) => keys.add(key));
+      });
+    } else {
+      // 单节点模式
+      const nodeKeys = await this.scanNode(this.client, pattern);
+      nodeKeys.forEach((key) => keys.add(key));
+    }
+    return Array.from(keys);
+  }
 
   /**
-   * 获取所有符合前缀的 Redis 键
-   * @returns 包含所有符合前缀的键的数组
+   * 从单个节点扫描匹配的键
    */
-  private async getAllKeys() {
-    // 生成扫描的模式
-    const pattern = this.prefix + "*";
-    // 使用 Set 存储键，避免重复
-    const set = new Set<string>();
-    // 初始游标位置
+  private async scanNode(client: Redis, pattern: string): Promise<string[]> {
+    const keys: string[] = [];
     let cursor = "0";
     do {
-      // 执行 Redis SCAN 命令
-      const [newCursor, keys] = await this.client.scan(
-        cursor,
+      const [nextCursor, matchedKeys] = await client.scan(
+        Number(cursor),
         "MATCH",
         pattern,
         "COUNT",
         this.scanCount
       );
-      // 更新游标位置
-      cursor = newCursor;
-      // 将获取到的键添加到 Set 中
-      keys.forEach((key) => set.add(key));
+      cursor = nextCursor.toString();
+      keys.push(...matchedKeys);
+      // 防止无限循环的额外保护
+      if (cursor === "0") break;
     } while (cursor !== "0");
-
-    // 将 Set 转换为数组并返回
-    return set.size > 0 ? Array.from(set) : [];
+    return keys;
+  }
+  private isCluster(client: Redis | Cluster): client is Cluster {
+    return typeof (client as Cluster).nodes === "function";
   }
 }

@@ -193,6 +193,8 @@ export function decrypt(encryptedText: string, key: string): string {
 export function getAbsolutePath(path: string) {
   return isAbsolute(path) ? path : resolve(path);
 }
+//获取相对路径
+
 export async function importModule<T = any>(path: string): Promise<T> {
   path = getAbsolutePath(path);
   if (extname(path) === ".json") {

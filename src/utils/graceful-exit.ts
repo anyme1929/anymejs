@@ -55,7 +55,7 @@ export default class GracefulExit implements IGracefulExit {
     if (this.cleanupTasks.size === 0) return;
     await Promise.all([...this.cleanupTasks].map((task) => task()));
     this.cleanupTasks.clear();
-    this.logger.info("✅ All resources closed").end();
+    this.logger.info("✅ All resources closed");
   }
 
   /**

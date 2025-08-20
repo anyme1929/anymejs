@@ -9,9 +9,9 @@
     "dist"
   ],
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "watch": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "rollup -c",
-    "start": "node dist/esm/index.js",
+    "start": "node dist/cjs/index.js",
     "madge": "madge --circular --extensions ts ./src",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint --fix src/**/*.ts",

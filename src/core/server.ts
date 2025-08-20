@@ -23,8 +23,8 @@ export default class CreateServer implements ICreateServer {
   init(app: Application, config: IConfig["server"]) {
     if (this.isInitialized) return this;
     this.config = config;
-    this.setProxy();
-    this.app = useExpressServer(app, config.route);
+    this.setProxy(app);
+    this.app = useExpressServer(app, config!.route);
     this.isInitialized = true;
     return this;
   }
@@ -39,7 +39,7 @@ export default class CreateServer implements ICreateServer {
     const { https, port: httpPort } = this.config!;
     this.pending = new Promise<IServer>((res, rej) => {
       if (this.server?.listening) return rej("Server already running");
-      this.createServer().then(({ ssl, server }) => {
+      this.createServer(this.app!).then(({ ssl, server }) => {
         const scheme = ssl ? "https" : "http";
         port = port ?? (ssl ? https.port : httpPort);
         this.server = server
@@ -55,15 +55,11 @@ export default class CreateServer implements ICreateServer {
     });
     return this.pending;
   }
-  private async setProxy() {
-    const { proxy } = this.config!;
-    if (proxy) this.app?.set("trust proxy", proxy);
-  }
-  private async createServer() {
+  private async createServer(app: Application) {
     const { ssl, enable } = this.config!.https;
     if (!enable)
       return {
-        server: createHttp(this.app!),
+        server: createHttp(app),
         ssl: false,
       };
     // 读取 SSL 证书和密钥
@@ -74,7 +70,7 @@ export default class CreateServer implements ICreateServer {
 
     if (!key || !cert) {
       this.logger.warn("SSL key or certificate not found");
-      return { server: createHttp(this.app!), ssl: false };
+      return { server: createHttp(app), ssl: false };
     }
     let ca: Buffer[] | undefined;
     if (ssl.requestCert && ssl.ca?.length) {
@@ -83,7 +79,6 @@ export default class CreateServer implements ICreateServer {
           (p): p is PromiseFulfilledResult<Buffer> => p.status === "fulfilled"
         )
         .map((p) => p.value);
-
       if (!ca.length) this.logger.warn("SSL CA certificates not found");
     }
     return {
@@ -94,16 +89,21 @@ export default class CreateServer implements ICreateServer {
           cert,
           ca: ca?.length ? ca : undefined,
         },
-        this.app!
+        app
       ),
       ssl: true,
     };
   }
+
   private async readFile(path: string): Promise<Buffer | null> {
     try {
       return readFileSync(getAbsolutePath(path));
     } catch {
       return null;
     }
+  }
+  private async setProxy(app: Application) {
+    const { proxy } = this.config!;
+    if (proxy) app.set("trust proxy", proxy);
   }
 }

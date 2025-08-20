@@ -1,11 +1,18 @@
-import { type RedisOptions, type Redis } from "ioredis";
+import type {
+  RedisOptions,
+  Redis,
+  ClusterNode,
+  ClusterOptions,
+  Cluster,
+} from "ioredis";
 import { type SessionOptions } from "express-session";
 import { type DataSourceOptions } from "typeorm";
 import { type RoutingControllersOptions } from "routing-controllers";
 import { type Application, type RequestHandler } from "express";
 import { type Logger, type Logform, type transports } from "winston";
 import { type DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
-
+import { type Options as RateLimitOptions } from "express-rate-limit";
+import { type Options as SlowDownOptions } from "express-slow-down";
 export interface HealthCheckMap {
   verbatim?: boolean;
   __unsafeExposeStackTraces?: boolean;
@@ -50,7 +57,11 @@ export interface IServer {
   on(event: "error", listener: (err: Error) => void): this;
   on(event: "listening", listener: () => void): this;
 }
-
+export interface RedisClusterOpt {
+  node: ClusterNode[];
+  options?: ClusterOptions;
+}
+export type RedisOpt = RedisOptions | Partial<RedisClusterOpt>;
 /**
  * 应用程序配置接口，包含所有可配置项
  */
@@ -68,14 +79,20 @@ export interface IConfig {
     /** 是否启用数据库连接 */
     enable: boolean;
     /** 数据库连接配置 */
-    client: DataSourceOptions;
+    client?: DataSourceOptions;
   };
   /** Redis 配置选项 */
   redis: {
     /** 是否启用 Redis 连接 */
     enable: boolean;
     /** Redis 连接配置 */
-    client: RedisOptions;
+    default: RedisOptions;
+    cluster: RedisClusterOpt & { enable: boolean };
+    clients?: {
+      [key: string]: RedisOpt & {
+        cluster?: boolean;
+      };
+    };
   };
   /** Session 配置选项 */
   session: {
@@ -106,6 +123,25 @@ export interface IConfig {
       };
     };
     route: RoutingControllersOptions;
+  };
+  limiter: {
+    /** 是否启用限流 */
+    enable: boolean;
+    /** 限流规则 */
+    rules?:
+      | {
+          /** 限流配置 */
+          [key: string]:
+            | [Partial<SlowDownOptions>, Partial<RateLimitOptions>]
+            | {
+                slowDownOptions?: Partial<SlowDownOptions>;
+                rateLimitOptions?: Partial<RateLimitOptions>;
+              };
+        }[]
+      | {
+          slowDownOptions?: Partial<SlowDownOptions>;
+          rateLimitOptions?: Partial<RateLimitOptions>;
+        };
   };
 }
 /**
@@ -146,21 +182,26 @@ export interface ICreateServer {
   bootstrap(port?: number): Promise<IServer>;
 }
 
-export interface ICreateSession {
-  getHandler(): RequestHandler;
-  setRedis(prefix: string, redis: Redis): void;
+export interface IMiddleware {
+  register(app: Application): IMiddleware;
+  applySession(config: IConfig["session"], redis?: Redis | Cluster);
+  applyRoute();
+  applyLimiter(config: IConfig["limiter"]);
 }
-
 export interface IHandler {
   name: string;
   handle: RequestHandler;
 }
+export interface IRedis {
+  connectAll(): Promise<void>;
+  get(name?: string): Redis | Cluster | undefined;
+  getAll(): Map<string, Redis | Cluster>;
+  close(name?: string): Promise<void>;
+  closeAll(): Promise<void>;
+}
 export interface LoadEnvOptions {
   cwd?: string;
   override?: boolean;
-}
-export interface IRouteRegistrar {
-  register(app: Application): void;
 }
 export interface PackageJson {
   name: string;

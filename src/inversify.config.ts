@@ -2,14 +2,13 @@ import { CoreConfig } from "./config";
 import { Anyme } from "./core/anyme";
 import GracefulExit from "./utils/graceful-exit";
 import InversifyAdapter from "./utils/inversify-adapter";
-import RouteRegistrar from "./utils/route-registrar";
 import { Container, inject } from "inversify";
 import {
   CreateDataSource,
-  CreateRedis,
+  ARedis,
   CreateServer,
   WinstonLogger,
-  CreateSession,
+  Middleware,
 } from "./core";
 import type {
   Application,
@@ -18,6 +17,7 @@ import type {
   IocAdapter,
   DataSource,
   Redis,
+  Cluster,
   EntityTarget,
   ObjectLiteral,
   Provider,
@@ -68,16 +68,15 @@ class DI {
     this.container
       .bind(SYMBOLS.Redis)
       .toResolvedValue(
-        (config: IConfig, logger: Logger) => CreateRedis(config.redis, logger),
+        (config: IConfig, logger: Logger) => new ARedis(config.redis, logger),
         [SYMBOLS.Config, SYMBOLS.Logger]
       );
 
-    // 注册会话处理服务
     this.container
-      .bind(SYMBOLS.CreateSession)
+      .bind(SYMBOLS.Middleware)
       .toResolvedValue(
-        (config: IConfig) => new CreateSession(config.session.client),
-        [SYMBOLS.Config]
+        (logger: Logger) => new Middleware(logger),
+        [SYMBOLS.Logger]
       );
     this.container
       .bind(SYMBOLS.GracefulExit)
@@ -94,35 +93,19 @@ class DI {
           new CreateServer(iocAdapter, logger),
         [SYMBOLS.IocAdapter, SYMBOLS.Logger]
       );
-    this.container.bind(SYMBOLS.RouteRegistrar).to(RouteRegistrar);
     this.container.bind<Provider<Anyme>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: Anyme | undefined = undefined;
       return async (express: Application) => {
-        const config = await ctx.getAsync<IConfig>(SYMBOLS.Config);
-        const logger = await ctx.getAsync<Logger>(SYMBOLS.Logger);
-        const createSession = await ctx.getAsync<CreateSession>(
-          SYMBOLS.CreateSession
-        );
-        const createServer = ctx.get<CreateServer>(SYMBOLS.CreateServer);
-        const gracefulExit = await ctx.getAsync<GracefulExit>(
-          SYMBOLS.GracefulExit
-        );
-        const routeRegistrar = ctx.get<RouteRegistrar>(SYMBOLS.RouteRegistrar);
-        const dataSource = await ctx.getAsync<DataSource | undefined>(
-          SYMBOLS.DataSource
-        );
-        const redis = await ctx.getAsync<Redis | undefined>(SYMBOLS.Redis);
         if (!instance)
           instance = new Anyme(
             express,
-            config,
-            logger,
-            createServer,
-            createSession,
-            gracefulExit,
-            routeRegistrar,
-            dataSource,
-            redis
+            await ctx.getAsync<IConfig>(SYMBOLS.Config),
+            ctx.get<Logger>(SYMBOLS.Logger),
+            ctx.get<CreateServer>(SYMBOLS.CreateServer),
+            ctx.get<GracefulExit>(SYMBOLS.GracefulExit),
+            ctx.get<Middleware>(SYMBOLS.Middleware),
+            ctx.get<ARedis>(SYMBOLS.Redis),
+            ctx.get<DataSource | undefined>(SYMBOLS.DataSource)
           );
         return instance;
       };
