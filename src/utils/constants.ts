@@ -7,6 +7,7 @@ export const SYMBOLS = {
   CoreConfig: Symbol.for("CoreConfig"),
   ConfigProvider: Symbol.for("ConfigProvider"),
   Config: Symbol.for("Config"),
+  Cache: Symbol.for("Cache"),
   DataSource: Symbol.for("DataSource"),
   Redis: Symbol.for("Redis"),
   Logger: Symbol.for("Logger"),

@@ -184,4 +184,5 @@ export const CONFIG = {
       },
     },
   },
+  cache: {},
 } as IConfig;

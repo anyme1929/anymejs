@@ -10,6 +10,7 @@ import {
   CreateServer,
   WinstonLogger,
   Middleware,
+  ACache,
 } from "./core";
 import type {
   Application,
@@ -46,6 +47,12 @@ class DI {
       .toResolvedValue(
         async (coreConfig: CoreConfig) => await coreConfig.load(),
         [SYMBOLS.CoreConfig]
+      );
+    this.container
+      .bind(SYMBOLS.Cache)
+      .toResolvedValue(
+        (config: IConfig) => new ACache(config.cache),
+        [SYMBOLS.Config]
       );
     this.container
       .bind(SYMBOLS.Logger)
@@ -126,6 +133,9 @@ class DI {
   static injectRedis = (): MethodDecorator &
     ParameterDecorator &
     PropertyDecorator => inject(SYMBOLS.Redis);
+  static injectCache = (): MethodDecorator &
+    ParameterDecorator &
+    PropertyDecorator => inject(SYMBOLS.Cache);
   static injectDataSource = (): MethodDecorator &
     ParameterDecorator &
     PropertyDecorator => inject(SYMBOLS.DataSource);
@@ -155,4 +165,4 @@ class DI {
   };
 }
 DI.register();
-export { DI };
+export default DI;
