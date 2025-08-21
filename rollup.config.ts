@@ -49,6 +49,7 @@ export default defineConfig([
     output: {
       dir: "dist/cjs",
       format: "cjs",
+      exports: "named",
       sourcemap: true,
       preserveModules: true,
       preserveModulesRoot: "src",

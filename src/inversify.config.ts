@@ -113,6 +113,7 @@ class DI {
             ctx.get<GracefulExit>(SYMBOLS.GracefulExit),
             ctx.get<Middleware>(SYMBOLS.Middleware),
             ctx.get<ARedis>(SYMBOLS.Redis),
+            ctx.get<ACache>(SYMBOLS.Cache),
             ctx.get<DataSource | undefined>(SYMBOLS.DataSource)
           );
         return instance;
@@ -125,6 +126,11 @@ class DI {
   static Redis = (key?: string) => {
     return createParamDecorator({
       value: () => this.container.get<ARedis>(SYMBOLS.Redis).get(key),
+    });
+  };
+  static Cache = () => {
+    return createParamDecorator({
+      value: () => this.container.get<ACache>(SYMBOLS.Cache),
     });
   };
   static injectLogger = (): MethodDecorator &

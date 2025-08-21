@@ -8,40 +8,12 @@ import type {
 import { type SessionOptions } from "express-session";
 import { type DataSourceOptions } from "typeorm";
 import { type RoutingControllersOptions } from "routing-controllers";
-import {
-  type Application,
-  type RequestHandler,
-  type ApplicationRequestHandler,
-  type Request,
-} from "express";
+import { type Application, type RequestHandler, type Request } from "express";
 import { type Logger, type Logform, type transports } from "winston";
 import { type DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import { type Options as RateLimitOptions } from "express-rate-limit";
 import { type Options as SlowDownOptions } from "express-slow-down";
-/**
- * 缓存配置选项接口
- */
-export interface CacheOptions {
-  /**
-   * 最大缓存容量（项目数量），默认1000
-   */
-  maxSize?: number;
 
-  /**
-   * 最大内存使用量（字节），0表示无限制，默认0
-   */
-  maxMemorySize?: number;
-
-  /**
-   * 缓存淘汰策略，默认'lru'
-   */
-  evictionPolicy?: EvictionPolicy;
-
-  /**
-   * 定期清理过期项的间隔时间(毫秒)，默认60000(1分钟)
-   */
-  cleanupIntervalMs?: number;
-}
 export interface HealthCheckMap {
   verbatim?: boolean;
   __unsafeExposeStackTraces?: boolean;
@@ -317,7 +289,33 @@ export interface CtxArgs {
   ROOT: string;
   HOME: string;
 }
+/**
+ * 缓存配置选项接口
+ */
+export interface CacheOptions {
+  /**
+   * 最大缓存容量（项目数量），默认1000
+   */
+  maxSize?: number;
 
+  /**
+   * 最大内存使用量（字节），0表示无限制，默认0
+   */
+  maxMemorySize?: number;
+
+  /**
+   * 缓存淘汰策略，默认'lru'
+   */
+  evictionPolicy?: EvictionPolicy;
+
+  /**
+   * 定期清理过期项的间隔时间(毫秒)，默认60000(1分钟)
+   */
+  cleanupIntervalMs?: number;
+}
+/**
+ * 缓存统计信息接口
+ */
 export interface CacheStats {
   /**
    * 缓存命中次数
@@ -355,7 +353,60 @@ export interface CacheStats {
   maxMemorySize: number;
 }
 /**
- * MemoryCache接口定义
+ * 缓存项接口
+ */
+export interface CacheItem<T> {
+  /**
+   * 缓存的值
+   */
+  value: T;
+
+  /**
+   * 缓存项大小估算（字节）
+   */
+  size: number;
+
+  /**
+   * 创建时间戳(毫秒)
+   */
+  createdAt: number;
+
+  /**
+   * 过期时间戳(毫秒)，undefined表示永不过期
+   */
+  expiresAt?: number;
+
+  /**
+   * 最后访问时间戳(毫秒)
+   */
+  lastAccessed: number;
+
+  /**
+   * 访问次数
+   */
+  accessCount: number;
+}
+/**
+ * 批量设置缓存项的参数接口
+ */
+export interface MSetEntry<T = any> {
+  /**
+   * 缓存键
+   */
+  key: string;
+
+  /**
+   * 缓存值
+   */
+  value: T;
+
+  /**
+   * 过期时间(毫秒)，undefined表示永不过期
+   */
+  ttl?: number;
+}
+/**
+ * 内存缓存接口定义
  */
 export interface ICache<T = any> {
   /**
@@ -366,6 +417,13 @@ export interface ICache<T = any> {
   get(key: string): T | undefined;
 
   /**
+   * 批量获取缓存项
+   * @param keys 缓存键数组
+   * @returns 键值对对象，包含所有存在的缓存项
+   */
+  mget(keys: string[]): Record<string, T | undefined>;
+
+  /**
    * 设置缓存项
    * @param key 缓存键
    * @param value 缓存值
@@ -373,6 +431,13 @@ export interface ICache<T = any> {
    * @returns 是否设置成功
    */
   set(key: string, value: T, ttl?: number): boolean;
+
+  /**
+   * 批量设置缓存项
+   * @param entries 缓存项数组
+   * @returns 成功设置的项目数量
+   */
+  mset(entries: MSetEntry<T>[]): number;
 
   /**
    * 获取缓存项，如果不存在则设置
@@ -393,6 +458,13 @@ export interface ICache<T = any> {
    * @returns 如果成功删除则返回true，否则返回false
    */
   delete(key: string): boolean;
+
+  /**
+   * 批量删除缓存项
+   * @param keys 缓存键数组
+   * @returns 成功删除的项目数量
+   */
+  deleteMany(keys: string[]): number;
 
   /**
    * 清空所有缓存项

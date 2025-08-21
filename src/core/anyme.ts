@@ -5,6 +5,7 @@ import type {
   IGracefulExit,
   Logger,
   IServer,
+  ICache,
   ICreateServer,
   IMiddleware,
   Application,
@@ -20,9 +21,12 @@ export class Anyme {
     private gracefulExit: IGracefulExit,
     private middleware: IMiddleware,
     private redis: IRedis,
+    private cache: ICache,
     private dataSource?: DataSource
   ) {
-    this.middleware.register(this.app);
+    this.middleware.register(this.app).bind((req) => {
+      req.cache = this.cache;
+    });
   }
   async bootstrap(port?: number): Promise<IServer> {
     if (this.server) return this.server;
@@ -79,9 +83,7 @@ export class Anyme {
     try {
       if (!this.config.redis.enable) return;
       const result = await this.redis.connectAll();
-      this.middleware.bind((req) => {
-        req.redis = this.redis;
-      });
+      this.middleware.bind((req) => {});
       if (result.length > 0)
         this.gracefulExit.addCleanupTask(() => this.redis.closeAll());
     } catch (error) {
