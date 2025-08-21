@@ -6,7 +6,12 @@ export {
 } from "typeorm";
 export { type Redis, type Cluster } from "ioredis";
 export { type Logger } from "winston";
-export { type Application, type RequestHandler, type Express } from "express";
+export {
+  type Application,
+  type RequestHandler,
+  type Express,
+  type Request,
+} from "express";
 export { type SessionOptions } from "express-session";
 export {
   type IocAdapter,
@@ -20,3 +25,4 @@ export type DeepPartial<T> = {
 export type UserConfig = DeepPartial<IConfig>;
 declare type UserConfigCallback = (ctx: CtxArgs) => UserConfig;
 export type ConfigOptions = UserConfig | UserConfigCallback;
+// 扩展 Express Request 接口

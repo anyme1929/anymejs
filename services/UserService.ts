@@ -1,11 +1,9 @@
 // src/service/UserService.ts
 import { User } from "../models/User";
 import { type Repository } from "typeorm";
-import { type Redis } from "ioredis";
-import { injectRepository, injectRedis } from "../src";
+import { injectRepository } from "../src";
 export class UserService {
   constructor(
-    @injectRedis() private redis: Redis,
     @injectRepository(User) private userRepository: Repository<User>
   ) {}
 
@@ -15,7 +13,6 @@ export class UserService {
     return await this.userRepository.save(user);
   }
   async getAll() {
-    this.redis.set("test", "test");
     return await this.userRepository.find();
   }
 }

@@ -8,7 +8,12 @@ import type {
 import { type SessionOptions } from "express-session";
 import { type DataSourceOptions } from "typeorm";
 import { type RoutingControllersOptions } from "routing-controllers";
-import { type Application, type RequestHandler } from "express";
+import {
+  type Application,
+  type RequestHandler,
+  type ApplicationRequestHandler,
+  type Request,
+} from "express";
 import { type Logger, type Logform, type transports } from "winston";
 import { type DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import { type Options as RateLimitOptions } from "express-rate-limit";
@@ -102,6 +107,7 @@ export interface IConfig {
     prefix: string;
     /** Session 存储类型（内存或 Redis） */
     type: "memory" | "redis";
+    redis: string;
     /** Session 客户端配置 */
     client: SessionOptions;
   };
@@ -183,8 +189,9 @@ export interface ICreateServer {
 }
 
 export interface IMiddleware {
+  bind(value: (arg: Request) => void): IMiddleware;
   register(app: Application): IMiddleware;
-  applySession(config: IConfig["session"], redis?: Redis | Cluster);
+  applySession(config: IConfig["session"], redis?: IRedis);
   applyRoute();
   applyLimiter(config: IConfig["limiter"]);
 }
@@ -193,7 +200,7 @@ export interface IHandler {
   handle: RequestHandler;
 }
 export interface IRedis {
-  connectAll(): Promise<void>;
+  connectAll(): Promise<void[]>;
   get(name?: string): Redis | Cluster | undefined;
   getAll(): Map<string, Redis | Cluster>;
   close(name?: string): Promise<void>;

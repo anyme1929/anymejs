@@ -126,6 +126,7 @@ export const CONFIG = {
     enable: false,
     prefix: "session:",
     type: "memory",
+    redis: "default",
     client: {
       secret: "session",
       resave: false,

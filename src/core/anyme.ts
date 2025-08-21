@@ -2,13 +2,13 @@ import type {
   IConfig,
   DataSource,
   IRedis,
-  Cluster,
   IGracefulExit,
   Logger,
   IServer,
   ICreateServer,
   IMiddleware,
   Application,
+  RequestHandler,
 } from "../types";
 export class Anyme {
   private server: IServer | null = null;
@@ -26,7 +26,6 @@ export class Anyme {
   }
   async bootstrap(port?: number): Promise<IServer> {
     if (this.server) return this.server;
-    const { dataSource, redis } = this;
     try {
       await this.initialize();
       this.server = await this.createServer
@@ -48,7 +47,7 @@ export class Anyme {
   protected async initialize() {
     try {
       await Promise.all([this.initDatabase(), this.initRedis()]);
-      this.middleware.applySession(this.config.session);
+      this.middleware.applySession(this.config.session, this.redis);
       this.middleware.applyLimiter(this.config.limiter);
       this.middleware.applyRoute();
     } catch (error) {
@@ -75,16 +74,22 @@ export class Anyme {
       throw error;
     }
   }
+
   private async initRedis() {
     try {
       if (!this.config.redis.enable) return;
-      await this.redis.connectAll();
-      this.gracefulExit.addCleanupTask(async () => {
-        await this.redis.closeAll();
+      const result = await this.redis.connectAll();
+      this.middleware.bind((req) => {
+        req.redis = this.redis;
       });
+      if (result.length > 0)
+        this.gracefulExit.addCleanupTask(() => this.redis.closeAll());
     } catch (error) {
       this.logger.error("❌ Failed to connect to Redis", error);
       throw error;
     }
+  }
+  use(...handlers: RequestHandler[]) {
+    return this.app.use(...handlers);
   }
 }

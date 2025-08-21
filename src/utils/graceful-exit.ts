@@ -22,21 +22,16 @@ export default class GracefulExit implements IGracefulExit {
     if (!server.listening) throw new Error("Server Not Listening");
     this.isRegistered = true;
     this.setupProcessHandlers();
-    /**
-     * 创建优雅退出配置
-     * @param server - 要配置的HTTP服务器实例
-     * @param options - 配置选项 {
-     *   timeout: 清理超时时间（默认30000ms）,
-     *   signals: 监听的系统信号（默认SIGINT/SIGTERM）
-     * }
-     */
     createTerminus(server, {
       logger: this.logger.error,
       timeout: options?.timeout || 30000, // 清理超时时间（默认30秒）
-      signals: options?.signals || ["SIGINT", "SIGTERM"], // 监听的系统信号
+      signals: options?.signals || ["SIGINT", "SIGTERM", "exit"], // 监听的系统信号
       healthChecks: options?.healthCheck || {}, // 使用之前添加的健康检查端点
       onSignal: async () =>
         await this.handleSignal("🚦 Received termination signal"),
+      onShutdown: async () => {
+        this.logger.info("✅ Server gracefully shutdown");
+      },
     });
     return this;
   }
@@ -53,9 +48,9 @@ export default class GracefulExit implements IGracefulExit {
    */
   private async cleanup() {
     if (this.cleanupTasks.size === 0) return;
-    await Promise.all([...this.cleanupTasks].map((task) => task()));
+    await Promise.all(Array.from(this.cleanupTasks).map((task) => task()));
     this.cleanupTasks.clear();
-    this.logger.info("✅ All resources closed");
+    this.logger.info("✅ All resources closed").end();
   }
 
   /**
@@ -64,7 +59,7 @@ export default class GracefulExit implements IGracefulExit {
   private setupProcessHandlers() {
     // 未捕获异常
     process.on("uncaughtException", (err: Error) =>
-      this.handleSignal("❌ Uncaught Exception:", err)
+      this.handleSignal("⚠️ Uncaught Exception:", err)
     );
     // 未处理的Promise拒绝
     process.on("unhandledRejection", (err: Error) =>

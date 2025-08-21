@@ -46,9 +46,9 @@ export default class ARedis implements IRedis {
       });
   }
   async connectAll() {
+    if (isEmpty(this.redisMap)) return [];
     const connectPromises: Promise<void>[] = [];
     this.redisMap.forEach((client, key) => {
-      // 只处理等待连接的客户端
       if (client.status === "wait")
         connectPromises.push(this.connectClient(client, key));
       else
@@ -56,7 +56,7 @@ export default class ARedis implements IRedis {
           `Redis client "${key}" is already in status: ${client.status}`
         );
     });
-    await Promise.all(connectPromises);
+    return await Promise.all(connectPromises);
   }
   private async connectClient(
     client: Redis | Cluster,
@@ -84,6 +84,7 @@ export default class ARedis implements IRedis {
     return this.redisMap;
   }
   async closeAll() {
+    if (isEmpty(this.redisMap)) return;
     const closePromises: Promise<void>[] = [];
     this.redisMap.forEach((client, key) => {
       closePromises.push(

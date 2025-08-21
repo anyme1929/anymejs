@@ -6,7 +6,7 @@ import {
   Application,
   IConfig,
   IMiddleware,
-  Redis,
+  IRedis,
   Cluster,
   Logger,
 } from "../types";
@@ -54,14 +54,15 @@ export default class Middleware implements IMiddleware {
       if (rateLimitOptions) this.app.use(rateLimit(rateLimitOptions));
     }
   }
-  applySession(config: IConfig["session"], redis?: Redis | Cluster) {
+  applySession(config: IConfig["session"], redis: IRedis) {
     try {
       const { enable, type, prefix, client } = config;
       if (enable === false) return;
       if (type === "redis") {
-        if (!redis) throw new Error("Redis is required");
+        const redisClient = redis?.get(config.redis);
+        if (!redisClient) throw new Error("Redis is required");
         client.store = new RedisStore({
-          client: redis,
+          client: redisClient,
           prefix,
         });
       }
@@ -71,5 +72,12 @@ export default class Middleware implements IMiddleware {
       this.logger.error("❌ Failed to config session:", error);
       throw error;
     }
+  }
+  bind(value: (arg: any) => void) {
+    this.app.use((req, _, next) => {
+      value(req);
+      next();
+    });
+    return this;
   }
 }

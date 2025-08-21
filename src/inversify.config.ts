@@ -1,3 +1,4 @@
+import { createParamDecorator } from "routing-controllers";
 import { CoreConfig } from "./config";
 import { Anyme } from "./core/anyme";
 import GracefulExit from "./utils/graceful-exit";
@@ -114,6 +115,11 @@ class DI {
   }
   static createApp = (express: Application): Promise<Anyme> =>
     this.container.get<AppProvider>(SYMBOLS.App)(express);
+  static Redis = (key?: string) => {
+    return createParamDecorator({
+      value: () => this.container.get<ARedis>(SYMBOLS.Redis).get(key),
+    });
+  };
   static injectLogger = (): MethodDecorator &
     ParameterDecorator &
     PropertyDecorator => inject(SYMBOLS.Logger);
