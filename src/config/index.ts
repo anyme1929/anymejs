@@ -108,6 +108,8 @@ export class CoreConfig {
       if (process.env[item.value]) {
         if (item.type === "number")
           this.set(item.key, parseInt(process.env[item.value]!));
+        else if (item.type === "boolean")
+          this.set(item.key, process.env[item.value] === "true");
         else if (item.type === "resolve")
           this.set(item.key, resolve(process.env[item.value]!));
         else this.set(item.key, process.env[item.value]!);

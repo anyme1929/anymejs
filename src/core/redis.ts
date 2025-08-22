@@ -1,5 +1,11 @@
-import { Redis, Cluster, type RedisOptions } from "ioredis";
-import { IConfig, Logger, RedisClusterOpt, IRedis } from "../types";
+import { Redis, Cluster } from "ioredis";
+import type {
+  IConfig,
+  Logger,
+  RedisOpt,
+  IRedis,
+  RedisClusterOpt,
+} from "../types";
 import { isEmpty } from "../utils";
 export default class ARedis implements IRedis {
   private redisMap: Map<string, Redis | Cluster> = new Map();
@@ -9,51 +15,57 @@ export default class ARedis implements IRedis {
   private init(config: IConfig["redis"]) {
     if (!config.enable) return;
     if (this.redisMap.size !== 0) return this.redisMap;
-    const { default: defaultOpt, clients, cluster } = config;
-    if (!isEmpty(defaultOpt))
-      this.redisMap.set("default", new Redis(defaultOpt));
-    if (cluster.enable && !isEmpty(cluster))
-      this.redisMap.set("cluster", new Cluster(cluster.node, cluster.options));
-    if (clients && !isEmpty(clients))
-      Object.entries(clients).forEach(([key, opt]) => {
-        if (opt.cluster) {
-          const clusterClient = this.redisMap.get("cluster");
-          if (clusterClient) {
-            this.redisMap.set(
-              key,
-              (clusterClient as Cluster).duplicate(
-                (opt as RedisClusterOpt).node,
-                (opt as RedisClusterOpt).options
-              )
-            );
-          } else
-            this.redisMap.set(
-              key,
-              new Cluster(
-                (opt as RedisClusterOpt).node,
-                (opt as RedisClusterOpt).options
-              )
-            );
-        } else {
-          const defaultClient = this.redisMap.get("default");
-          if (defaultClient) {
-            this.redisMap.set(
-              key,
-              (defaultClient as Redis).duplicate(opt as RedisOptions)
-            );
-          } else this.redisMap.set(key, new Redis(opt as RedisOptions));
-        }
-      });
+    if (!isEmpty(config.client)) this.set("default", config.client!);
+    if (!isEmpty(config.clients)) {
+      if (
+        "default" in config &&
+        !isEmpty(config.default) &&
+        !this.redisMap.has("default")
+      )
+        this.set("default", config.default!);
+      Object.entries(config.clients!).forEach(([key, opt]) =>
+        this.set(key, opt)
+      );
+    }
+  }
+  private createClient(opt: RedisOpt) {
+    const defaultClient = this.redisMap.get("default");
+    const isClusterOpt = this.isClusterOpt(opt);
+    try {
+      if (!defaultClient)
+        return isClusterOpt
+          ? new Cluster(opt.node, opt.options)
+          : new Redis(opt);
+      const isRedisClient = this.isRedis(defaultClient);
+      if (!isClusterOpt)
+        return isRedisClient ? defaultClient.duplicate(opt) : new Redis(opt);
+      return !isRedisClient
+        ? defaultClient.duplicate(opt.node, opt.options)
+        : new Cluster(opt.node, opt.options);
+    } catch (error) {
+      this.logger.error("❌ Failed to create redis client:", error);
+      return undefined;
+    }
+  }
+  private set(key: string, opt: RedisOpt) {
+    const client = this.createClient(opt);
+    if (client) this.redisMap.set(key, client);
+  }
+  private isRedis(client: Redis | Cluster): client is Redis {
+    return client instanceof Redis;
+  }
+  private isClusterOpt(opt: RedisOpt): opt is RedisClusterOpt {
+    return "cluster" in opt && opt.cluster === true;
   }
   async connectAll() {
-    if (isEmpty(this.redisMap)) return [];
+    if (this.redisMap.size === 0) return [];
     const connectPromises: Promise<void>[] = [];
     this.redisMap.forEach((client, key) => {
       if (client.status === "wait")
         connectPromises.push(this.connectClient(client, key));
       else
         this.logger.debug(
-          `Redis client "${key}" is already in status: ${client.status}`
+          `Redis client "${key}" is in status: ${client.status}`
         );
     });
     return await Promise.all(connectPromises);
@@ -84,7 +96,7 @@ export default class ARedis implements IRedis {
     return this.redisMap;
   }
   async closeAll() {
-    if (isEmpty(this.redisMap)) return;
+    if (this.redisMap.size === 0) return;
     const closePromises: Promise<void>[] = [];
     this.redisMap.forEach((client, key) => {
       closePromises.push(

@@ -17,18 +17,18 @@ export const ENV_KEY_VALUES = [
   },
   { key: "db.client.username", value: "DB_USER", type: "string" },
   { key: "db.client.password", value: "DB_PASSWORD", type: "string" },
-  { key: "db.client.database", value: "DB_DATABASE", type: "string" },
-  { key: "redis.default.name", value: "REDIS_MASTER_NAME", type: "string" },
-  { key: "redis.default.username", value: "REDIS_USERNAME", type: "string" },
-  { key: "redis.default.host", value: "REDIS_HOST", type: "string" },
+  { key: "db.client.database", value: "DB_DATABASE", type: "number" },
+  { key: "redis.client.name", value: "REDIS_MASTER_NAME", type: "string" },
+  { key: "redis.client.username", value: "REDIS_USERNAME", type: "string" },
+  { key: "redis.client.host", value: "REDIS_HOST", type: "string" },
   {
-    key: "redis.default.port",
+    key: "redis.client.port",
     value: "REDIS_PORT",
     type: "number",
   },
-  { key: "redis.default.password", value: "REDIS_PASSWORD", type: "string" },
+  { key: "redis.client.password", value: "REDIS_PASSWORD", type: "string" },
   {
-    key: "redis.default.db",
+    key: "redis.client.db",
     value: "REDIS_DATABASE",
     type: "string",
   },
@@ -111,16 +111,6 @@ export const CONFIG = {
   },
   redis: {
     enable: false,
-    default: {
-      lazyConnect: true,
-    },
-    cluster: {
-      enable: false,
-      node: [],
-      options: {
-        lazyConnect: true,
-      },
-    },
   },
   session: {
     enable: false,

@@ -59,10 +59,11 @@ export interface IServer {
   on(event: "listening", listener: () => void): this;
 }
 export interface RedisClusterOpt {
+  cluster: boolean;
   node: ClusterNode[];
   options?: ClusterOptions;
 }
-export type RedisOpt = RedisOptions | Partial<RedisClusterOpt>;
+export type RedisOpt = RedisOptions | RedisClusterOpt;
 /**
  * 应用程序配置接口，包含所有可配置项
  */
@@ -87,12 +88,10 @@ export interface IConfig {
     /** 是否启用 Redis 连接 */
     enable: boolean;
     /** Redis 连接配置 */
-    default: RedisOptions;
-    cluster: RedisClusterOpt & { enable: boolean };
+    client?: RedisOpt;
+    default?: RedisOpt;
     clients?: {
-      [key: string]: RedisOpt & {
-        cluster?: boolean;
-      };
+      [key: string]: RedisOpt;
     };
   };
   /** Session 配置选项 */

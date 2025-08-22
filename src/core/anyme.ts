@@ -83,11 +83,14 @@ export class Anyme {
     try {
       if (!this.config.redis.enable) return;
       const result = await this.redis.connectAll();
-      this.middleware.bind((req) => {});
+      this.middleware.bind((req) => {
+        if (this.config.redis.clients) req.redis = this.redis;
+        else req.redis = this.redis.get()!;
+      });
       if (result.length > 0)
         this.gracefulExit.addCleanupTask(() => this.redis.closeAll());
     } catch (error) {
-      this.logger.error("❌ Failed to connect to Redis", error);
+      this.logger.error("❌ Failed to init Redis", error);
       throw error;
     }
   }
