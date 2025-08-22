@@ -82,6 +82,10 @@ export interface IConfig {
     enable: boolean;
     /** 数据库连接配置 */
     client?: DataSourceOptions;
+    default?: DataSourceOptions;
+    clients?: {
+      [key: string]: DataSourceOptions;
+    };
   };
   /** Redis 配置选项 */
   redis: {
@@ -199,6 +203,13 @@ export interface IRedis {
   connectAll(): Promise<void[]>;
   get(name?: string): Redis | Cluster | undefined;
   getAll(): Map<string, Redis | Cluster>;
+  close(name?: string): Promise<void>;
+  closeAll(): Promise<void>;
+}
+export interface IDataSource {
+  connectAll(): Promise<void[]>;
+  get(name?: string): DataSource | undefined;
+  getAll(): Map<string, DataSource>;
   close(name?: string): Promise<void>;
   closeAll(): Promise<void>;
 }

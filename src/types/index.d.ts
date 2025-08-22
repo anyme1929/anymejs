@@ -3,6 +3,7 @@ export {
   type DataSource,
   type EntityTarget,
   type ObjectLiteral,
+  type DataSourceOptions,
 } from "typeorm";
 export { type Redis, type Cluster } from "ioredis";
 export { type Logger } from "winston";

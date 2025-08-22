@@ -1,6 +1,6 @@
 import type {
   IConfig,
-  DataSource,
+  IDataSource,
   IRedis,
   IGracefulExit,
   Logger,
@@ -22,7 +22,7 @@ export class Anyme {
     private middleware: IMiddleware,
     private redis: IRedis,
     private cache: ICache,
-    private dataSource?: DataSource
+    private dataSource: IDataSource
   ) {
     this.middleware.register(this.app).bind((req) => {
       req.cache = this.cache;
@@ -61,18 +61,10 @@ export class Anyme {
   }
   private async initDatabase() {
     try {
-      if (
-        !this.dataSource ||
-        this.config.db.enable === false ||
-        this.dataSource.isInitialized
-      )
-        return;
-      await this.dataSource.initialize();
-      this.logger.info("✅ Database connected");
-      this.gracefulExit.addCleanupTask(async () => {
-        await this.dataSource!.destroy();
-        this.logger.info("✅ Database connection closed");
-      });
+      if (this.config.db.enable === false) return;
+      const result = await this.dataSource.connectAll();
+      if (result.length > 0)
+        this.gracefulExit.addCleanupTask(() => this.dataSource.closeAll());
     } catch (error) {
       this.logger.error("❌ Failed to connect to database", error);
       throw error;

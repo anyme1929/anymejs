@@ -5,7 +5,7 @@ import GracefulExit from "./utils/graceful-exit";
 import InversifyAdapter from "./utils/inversify-adapter";
 import { Container, inject } from "inversify";
 import {
-  CreateDataSource,
+  ADataSource,
   ARedis,
   CreateServer,
   WinstonLogger,
@@ -68,8 +68,8 @@ class DI {
     this.container
       .bind(SYMBOLS.DataSource)
       .toResolvedValue(
-        (config: IConfig) => CreateDataSource(config.db),
-        [SYMBOLS.Config]
+        (logger: Logger, config: IConfig) => new ADataSource(logger, config.db),
+        [SYMBOLS.Logger, SYMBOLS.Config]
       );
 
     // 注册 Redis 服务
@@ -114,7 +114,7 @@ class DI {
             ctx.get<Middleware>(SYMBOLS.Middleware),
             ctx.get<ARedis>(SYMBOLS.Redis),
             ctx.get<ACache>(SYMBOLS.Cache),
-            ctx.get<DataSource | undefined>(SYMBOLS.DataSource)
+            ctx.get<ADataSource>(SYMBOLS.DataSource)
           );
         return instance;
       };

@@ -6,27 +6,21 @@ import type {
   IRedis,
   RedisClusterOpt,
 } from "../types";
-import { isEmpty } from "../utils";
-export default class ARedis implements IRedis {
+import { isEmpty, deepMerge } from "../utils";
+export class ARedis implements IRedis {
   private redisMap: Map<string, Redis | Cluster> = new Map();
   constructor(config: IConfig["redis"], private logger: Logger) {
     this.init(config);
   }
   private init(config: IConfig["redis"]) {
-    if (!config.enable) return;
-    if (this.redisMap.size !== 0) return this.redisMap;
+    if (!config.enable || this.redisMap.size !== 0) return;
     if (!isEmpty(config.client)) this.set("default", config.client!);
-    if (!isEmpty(config.clients)) {
-      if (
-        "default" in config &&
-        !isEmpty(config.default) &&
-        !this.redisMap.has("default")
-      )
-        this.set("default", config.default!);
-      Object.entries(config.clients!).forEach(([key, opt]) =>
-        this.set(key, opt)
-      );
-    }
+    if (!isEmpty(config.clients))
+      Object.entries(config.clients!).forEach(([key, opt]) => {
+        if ("default" in config && !isEmpty(config.default))
+          opt = deepMerge(config.default!, opt);
+        this.set(key, opt);
+      });
   }
   private createClient(opt: RedisOpt) {
     const defaultClient = this.redisMap.get("default");
@@ -88,12 +82,13 @@ export default class ARedis implements IRedis {
     client.removeAllListeners();
     await client.quit();
     this.redisMap.delete(name ?? "default");
+    this.logger.debug(`✅ Redis connection closed: ${name}`);
   }
   get(name?: string) {
     return this.redisMap.get(name ?? "default");
   }
   getAll() {
-    return this.redisMap;
+    return new Map(this.redisMap);
   }
   async closeAll() {
     if (this.redisMap.size === 0) return;
