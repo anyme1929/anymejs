@@ -1,31 +1,26 @@
 import { createParamDecorator } from "routing-controllers";
+import { Container, inject, type Provider } from "inversify";
 import { CoreConfig } from "./config";
-import { Anyme } from "./core/anyme";
-import GracefulExit from "./utils/graceful-exit";
+import { SYMBOLS } from "./utils/constants";
 import InversifyAdapter from "./utils/inversify-adapter";
-import { Container, inject } from "inversify";
 import {
-  ADataSource,
+  Anyme,
   ARedis,
+  ACache,
+  ADataSource,
   CreateServer,
   WinstonLogger,
   Middleware,
-  ACache,
+  GracefulExit,
 } from "./core";
 import type {
   Application,
   Logger,
   IConfig,
   IocAdapter,
-  DataSource,
-  Redis,
-  Cluster,
   EntityTarget,
   ObjectLiteral,
-  Provider,
 } from "./types";
-import { SYMBOLS } from "./utils/constants";
-type AppProvider = (express?: Application) => Promise<Anyme>;
 class DI {
   static container: Container = new Container({
     autobind: true,
@@ -122,7 +117,7 @@ class DI {
     this.registered = true;
   }
   static createApp = (express: Application): Promise<Anyme> =>
-    this.container.get<AppProvider>(SYMBOLS.App)(express);
+    this.container.get<Provider<Anyme>>(SYMBOLS.App)(express);
   static Redis = (key?: string) => {
     return createParamDecorator({
       value: () => this.container.get<ARedis>(SYMBOLS.Redis).get(key),

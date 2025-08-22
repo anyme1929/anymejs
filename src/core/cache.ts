@@ -1,5 +1,4 @@
 import { CacheOptions, CacheStats, ICache, CacheItem } from "../types";
-
 /**
  * 基于内存的LRU缓存实现，支持过期时间和容量限制
  */

@@ -1,11 +1,11 @@
+import { rateLimit } from "express-rate-limit";
+import { slowDown } from "express-slow-down";
 import { WELLCOME_HTML } from "../utils/constants";
 import session from "express-session";
 import RedisStore from "../utils/session-ioredis";
 import { encrypt, getEncryptionKey } from "../utils";
 import { Application, IConfig, IMiddleware, IRedis, Logger } from "../types";
-import { rateLimit } from "express-rate-limit";
-import { slowDown } from "express-slow-down";
-export default class Middleware implements IMiddleware {
+export class Middleware implements IMiddleware {
   private app!: Application;
   private isInitialized: boolean = false;
   constructor(private logger: Logger) {}

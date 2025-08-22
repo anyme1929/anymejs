@@ -1,7 +1,7 @@
 // 导入 express-session 中的 SessionData 类型和 Store 类
 import { type SessionData, Store } from "express-session";
 // 导入 ioredis 库
-import type { Redis, Cluster } from "../types";
+import type { Redis, Cluster } from "ioredis";
 
 // 定义回调函数类型，可接受错误信息和数据作为参数
 type Callback = (_err?: unknown, _data?: any) => any;

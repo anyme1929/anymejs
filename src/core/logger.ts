@@ -1,7 +1,7 @@
 import winston, { type Logger } from "winston";
 import DailyRotateFile from "winston-daily-rotate-file";
 import type { IConfig } from "../types";
-export default class WinstonLogger {
+export class WinstonLogger {
   private _logger: Logger;
   constructor(config: IConfig["logger"]) {
     this._logger = winston.createLogger({

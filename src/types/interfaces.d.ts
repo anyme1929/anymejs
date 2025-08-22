@@ -5,14 +5,14 @@ import type {
   ClusterOptions,
   Cluster,
 } from "ioredis";
-import { type SessionOptions } from "express-session";
-import { type DataSourceOptions } from "typeorm";
-import { type RoutingControllersOptions } from "routing-controllers";
-import { type Application, type RequestHandler, type Request } from "express";
-import { type Logger, type Logform, type transports } from "winston";
-import { type DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
-import { type Options as RateLimitOptions } from "express-rate-limit";
-import { type Options as SlowDownOptions } from "express-slow-down";
+import type { SessionOptions } from "express-session";
+import type { DataSourceOptions, DataSource } from "typeorm";
+import type { RoutingControllersOptions } from "routing-controllers";
+import type { Application, RequestHandler, Request } from "express";
+import type { Logger, Logform, transports } from "winston";
+import type { DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
+import type { Options as RateLimitOptions } from "express-rate-limit";
+import type { Options as SlowDownOptions } from "express-slow-down";
 
 export interface HealthCheckMap {
   verbatim?: boolean;

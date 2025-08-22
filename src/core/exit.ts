@@ -1,6 +1,6 @@
 import { createTerminus } from "@godaddy/terminus";
 import type { Logger, HealthCheckMap, IGracefulExit, IServer } from "../types";
-export default class GracefulExit implements IGracefulExit {
+export class GracefulExit implements IGracefulExit {
   private isRegistered: boolean = false;
   private isShuttingDown = false;
   private readonly cleanupTasks: Set<() => Promise<void>> = new Set();

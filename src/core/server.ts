@@ -11,7 +11,7 @@ import type {
   ICreateServer,
   Logger,
 } from "../types";
-export default class CreateServer implements ICreateServer {
+export class CreateServer implements ICreateServer {
   private isInitialized: boolean = false;
   private app: Application | null = null;
   private config: IConfig["server"] | null = null;
