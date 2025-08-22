@@ -201,14 +201,14 @@ export interface IHandler {
 }
 export interface IRedis {
   connectAll(): Promise<void[]>;
-  get(name?: string): Redis | Cluster | undefined;
+  get(name?: string): Redis | Cluster;
   getAll(): Map<string, Redis | Cluster>;
   close(name?: string): Promise<void>;
   closeAll(): Promise<void>;
 }
 export interface IDataSource {
   connectAll(): Promise<void[]>;
-  get(name?: string): DataSource | undefined;
+  get(name?: string): DataSource;
   getAll(): Map<string, DataSource>;
   close(name?: string): Promise<void>;
   closeAll(): Promise<void>;

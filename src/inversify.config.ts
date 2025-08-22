@@ -149,7 +149,10 @@ class DI {
     ParameterDecorator &
     PropertyDecorator => inject(SYMBOLS.ConfigProvider);
   static injectRepository = <T extends ObjectLiteral>(
-    entity: EntityTarget<T>
+    entity: EntityTarget<T>,
+    options?: {
+      dataSource?: string;
+    }
   ): MethodDecorator & ParameterDecorator & PropertyDecorator => {
     // 获取实体唯一标识
     const entityName =
@@ -161,8 +164,10 @@ class DI {
       this.container
         .bind(token)
         .toResolvedValue(
-          (dataSource: DataSource) => {
-            return dataSource.getRepository(entity);
+          (dataSource: ADataSource) => {
+            return dataSource
+              .get(options?.dataSource ?? "default")
+              ?.getRepository(entity);
           },
           [SYMBOLS.DataSource]
         )

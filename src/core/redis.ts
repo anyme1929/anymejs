@@ -85,7 +85,9 @@ export class ARedis implements IRedis {
     this.logger.debug(`✅ Redis connection closed: ${name}`);
   }
   get(name?: string) {
-    return this.redisMap.get(name ?? "default");
+    const client = this.redisMap.get(name ?? "default");
+    if (client) return client;
+    else throw new Error(`Redis client "${name ?? "default"}" not found`);
   }
   getAll() {
     return new Map(this.redisMap);

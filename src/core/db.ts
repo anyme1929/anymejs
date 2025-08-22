@@ -50,7 +50,9 @@ export class ADataSource implements IDataSource {
     }
   }
   get(name?: string) {
-    return this.dataSourceMap.get(name ?? "default");
+    const client = this.dataSourceMap.get(name ?? "default");
+    if (client) return client;
+    else throw new Error(`Database client "${name ?? "default"}" not found`);
   }
   getAll() {
     return new Map(this.dataSourceMap);

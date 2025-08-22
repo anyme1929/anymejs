@@ -24,9 +24,7 @@ export class Anyme {
     private cache: ICache,
     private dataSource: IDataSource
   ) {
-    this.middleware.register(this.app).bind((req) => {
-      req.cache = this.cache;
-    });
+    this.middleware.register(this.app);
   }
   async bootstrap(port?: number): Promise<IServer> {
     if (this.server) return this.server;
@@ -63,24 +61,21 @@ export class Anyme {
     try {
       if (this.config.db.enable === false) return;
       const result = await this.dataSource.connectAll();
-      if (result.length > 0)
+      if (result.length > 0) {
         this.gracefulExit.addCleanupTask(() => this.dataSource.closeAll());
+      }
     } catch (error) {
       this.logger.error("❌ Failed to connect to database", error);
       throw error;
     }
   }
-
   private async initRedis() {
     try {
       if (!this.config.redis.enable) return;
       const result = await this.redis.connectAll();
-      this.middleware.bind((req) => {
-        if (this.config.redis.clients) req.redis = this.redis;
-        else req.redis = this.redis.get()!;
-      });
-      if (result.length > 0)
+      if (result.length > 0) {
         this.gracefulExit.addCleanupTask(() => this.redis.closeAll());
+      }
     } catch (error) {
       this.logger.error("❌ Failed to init Redis", error);
       throw error;

@@ -3,7 +3,7 @@ import { CacheOptions, CacheStats, ICache, CacheItem } from "../types";
 /**
  * 基于内存的LRU缓存实现，支持过期时间和容量限制
  */
-class MemoryCache<T = any> implements ICache<T> {
+export class ACache<T = any> implements ICache<T> {
   private cache: Map<string, CacheItem<T>>; // 利用Map的插入顺序特性实现LRU
   private maxSize: number; // 最大缓存条目数
   private maxMemorySize: number; // 最大内存占用(字节)，0表示无限制
@@ -375,5 +375,3 @@ class MemoryCache<T = any> implements ICache<T> {
     this.clear();
   }
 }
-
-export default MemoryCache;
