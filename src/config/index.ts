@@ -25,7 +25,7 @@ export class CoreConfig {
   }
   async get(name?: string) {
     if (!name) return await this.loadCore();
-    if (this.configs.has(name)) return this.configs.get(name)!;
+    if (this.configs.has(name)) return this.configs.get(name);
     return this.#config;
   }
   async loadCore() {
