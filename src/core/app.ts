@@ -5,7 +5,6 @@ import type {
   IGracefulExit,
   Logger,
   IServer,
-  ICache,
   ICreateServer,
   IMiddleware,
   Application,
@@ -59,9 +58,8 @@ export class Anyme {
     try {
       if (this.config.db.enable === false) return;
       const result = await this.dataSource.connectAll();
-      if (result.length > 0) {
+      if (result.length > 0)
         this.gracefulExit.addCleanupTask(() => this.dataSource.closeAll());
-      }
     } catch (error) {
       this.logger.error("❌ Failed to connect to database", error);
       throw error;
@@ -71,9 +69,8 @@ export class Anyme {
     try {
       if (!this.config.redis.enable) return;
       const result = await this.redis.connectAll();
-      if (result.length > 0) {
+      if (result.length > 0)
         this.gracefulExit.addCleanupTask(() => this.redis.closeAll());
-      }
     } catch (error) {
       this.logger.error("❌ Failed to init Redis", error);
       throw error;

@@ -10,6 +10,7 @@ import {
   getAbsolutePath,
   ctx,
   isFunction,
+  all,
 } from "../utils";
 export class CoreConfig {
   #config: IConfig = CONFIG;
@@ -35,51 +36,34 @@ export class CoreConfig {
   async loadCore() {
     if (this.configs.has("core") || isEmpty(this.fileGroups))
       return this.#config;
-    this.fileGroups.forEach(async (path, key) => {
-      const module = await this.loadConfig(path);
-      if (!isEmpty(module)) this.configs.set(key, module);
-    });
-    const loadOrder: string[] = [];
-    if (this.fileGroups.has("default")) {
-      loadOrder.push("default");
-      this.configs.set(
-        "default",
-        await this.loadConfig(this.fileGroups.get("default")!)
-      );
-    }
-    if (this.env === "development" && this.fileGroups.has("local")) {
-      loadOrder.push("local");
-      this.configs.set(
-        "local",
-        await this.loadConfig(this.fileGroups.get("local")!)
-      );
-    } else if (this.env === "production" && this.fileGroups.has("prod")) {
-      loadOrder.push("prod");
-      this.configs.set(
-        "prod",
-        await this.loadConfig(this.fileGroups.get("prod")!)
-      );
-    } else if (
-      this.env &&
-      this.fileGroups.has(this.env) &&
-      !loadOrder.includes(this.env)
-    ) {
-      loadOrder.push(this.env);
-      this.configs.set(
-        this.env,
-        await this.loadConfig(this.fileGroups.get(this.env)!)
-      );
-    }
-    for (const key of loadOrder) {
-      const Path = this.fileGroups.get(key);
-      if (Path)
-        this.#config = deepMerge(this.#config, await this.loadConfig(Path));
-    }
+    await this.loadAll();
+    this.#config = deepMerge(this.#config, ...this.getCoreConfigs());
     this.loadEnvConfig();
     this.resolveServerPaths();
     this.validate();
     this.configs.set("core", this.#config);
     return this.#config;
+  }
+  private getCoreConfigs() {
+    const configs: object[] = [];
+    if (this.configs.has("default")) {
+      configs.push(this.configs.get("default")!);
+    }
+    if (this.env === "development" && this.configs.has("local")) {
+      configs.push(this.configs.get("local")!);
+    } else if (this.env === "production" && this.configs.has("prod")) {
+      configs.push(this.configs.get("prod")!);
+    } else if (this.env && this.configs.has(this.env)) {
+      configs.push(this.configs.get(this.env)!);
+    }
+    return configs;
+  }
+  private loadAll() {
+    return all(this.fileGroups, async ([key, path]) => {
+      const module = await this.loadConfig(path);
+      if (!isEmpty(module)) this.configs.set(key, module);
+      return module;
+    });
   }
   private loadPaths() {
     return fg.sync(this.getPattern(), {

@@ -6,7 +6,7 @@ import type {
   IRedis,
   RedisClusterOpt,
 } from "../types";
-import { isEmpty, deepMerge } from "../utils";
+import { isEmpty, deepMerge, all } from "../utils";
 export class ARedis implements IRedis {
   private redisMap: Map<string, Redis | Cluster> = new Map();
   constructor(config: IConfig["redis"], private logger: Logger) {
@@ -53,16 +53,10 @@ export class ARedis implements IRedis {
   }
   async connectAll() {
     if (this.redisMap.size === 0) return [];
-    const connectPromises: Promise<void>[] = [];
-    this.redisMap.forEach((client, key) => {
-      if (client.status === "wait")
-        connectPromises.push(this.connectClient(client, key));
-      else
-        this.logger.debug(
-          `Redis client "${key}" is in status: ${client.status}`
-        );
+    return await all(this.redisMap, async ([key, client]) => {
+      if (client.status === "wait") await this.connectClient(client, key);
+      return client.status;
     });
-    return await Promise.all(connectPromises);
   }
   private async connectClient(
     client: Redis | Cluster,
@@ -94,19 +88,15 @@ export class ARedis implements IRedis {
   }
   async closeAll() {
     if (this.redisMap.size === 0) return;
-    const closePromises: Promise<void>[] = [];
-    this.redisMap.forEach((client, key) => {
-      closePromises.push(
-        new Promise((resolve) => {
-          client.removeAllListeners();
-          client.quit().finally(() => {
-            this.redisMap.delete(key);
-            resolve();
-          });
-        })
-      );
-    });
-    await Promise.all(closePromises);
+    await all(
+      this.redisMap,
+      ([key, client]) =>
+        client
+          .removeAllListeners()
+          .quit()
+          .finally(() => this.redisMap.delete(key)),
+      this
+    );
     this.logger.info("✅ All Redis connections closed");
   }
 }

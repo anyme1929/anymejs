@@ -199,7 +199,18 @@ export interface IHandler {
   handle: RequestHandler;
 }
 export interface IRedis {
-  connectAll(): Promise<void[]>;
+  connectAll(): Promise<
+    (
+      | "end"
+      | "close"
+      | "wait"
+      | "connecting"
+      | "connect"
+      | "ready"
+      | "reconnecting"
+      | "disconnecting"
+    )[]
+  >;
   get(name?: string): Redis | Cluster;
   getAll(): Map<string, Redis | Cluster>;
   close(name?: string): Promise<void>;

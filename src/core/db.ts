@@ -1,6 +1,6 @@
 import { DataSource, type DataSourceOptions } from "typeorm";
 import { IConfig, Logger, IDataSource } from "../types";
-import { deepMerge, isEmpty } from "../utils";
+import { deepMerge, isEmpty, all } from "../utils";
 export class ADataSource implements IDataSource {
   private dataSourceMap: Map<string, DataSource> = new Map();
   constructor(private logger: Logger, config: IConfig["db"]) {
@@ -31,11 +31,9 @@ export class ADataSource implements IDataSource {
   }
   async connectAll() {
     if (this.dataSourceMap.size === 0) return [];
-    const connectPromises: Promise<void>[] = [];
-    this.dataSourceMap.forEach((client, key) =>
-      connectPromises.push(this.connectClient(client, key))
+    return all(this.dataSourceMap, ([key, client]) =>
+      this.connectClient(client, key)
     );
-    return await Promise.all(connectPromises);
   }
   private async connectClient(client: DataSource, key: string): Promise<void> {
     try {

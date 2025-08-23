@@ -16,22 +16,6 @@ import type {
   CtxArgs,
 } from "../types";
 import { ENC_DEFAULT_KEY, IV_LENGTH } from "./constants";
-
-// export function deepMerge<T extends Record<string, any>>(
-//   target: T,
-//   ...sources: DeepPartial<T>[]
-// ): T {
-//   if (!sources.length) return target;
-//   const result = { ...target };
-//   for (const source of sources) {
-//     for (const key in source) {
-//       if (isObject(source[key]) && key in target)
-//         result[key] = deepMerge(target[key], source[key]);
-//       else result[key] = source[key] as any;
-//     }
-//   }
-//   return result;
-// }
 export function merge<T extends Record<string, any>>(
   target: T,
   source: DeepPartial<T>
@@ -266,4 +250,23 @@ export function ctx(): CtxArgs {
 export function defineConfig(configOptions: ConfigOptions): UserConfig {
   if (!isFunction(configOptions)) return configOptions;
   return configOptions(ctx());
+}
+export function all<T, U>(
+  iterable: Iterable<T> | ArrayLike<T>,
+  mapfn: (v: T, k: number) => U,
+  thisArg?: any
+): Promise<Awaited<U>[]>;
+
+export function all<T>(
+  iterable: Iterable<T> | ArrayLike<T>
+): Promise<Awaited<T>[]>;
+
+export function all<T, U>(
+  iterable: Iterable<T> | ArrayLike<T>,
+  mapfn?: (v: T, k: number) => U,
+  thisArg?: any
+) {
+  return Promise.all(
+    mapfn ? Array.from(iterable, mapfn, thisArg) : Array.from(iterable)
+  );
 }
