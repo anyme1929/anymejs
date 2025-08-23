@@ -223,10 +223,6 @@ export interface IDataSource {
   close(name?: string): Promise<void>;
   closeAll(): Promise<void>;
 }
-export interface LoadEnvOptions {
-  cwd?: string;
-  override?: boolean;
-}
 export interface PackageJson {
   name: string;
   version: string;

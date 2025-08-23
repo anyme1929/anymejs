@@ -26,36 +26,36 @@ class DI {
     // 配置
     this.container.bind(SYMBOLS.CoreConfig).to(CoreConfig);
     this.container
-      .bind<Provider<object | undefined>>(SYMBOLS.ConfigProvider)
-      .toProvider((ctx) => {
-        const coreConfig = ctx.get<CoreConfig>(SYMBOLS.CoreConfig);
-        return async (name?: string) => await coreConfig.get(name);
-      });
-    this.container
       .bind(SYMBOLS.Config)
       .toResolvedValue(
         async (coreConfig: CoreConfig) => await coreConfig.loadCore(),
         [SYMBOLS.CoreConfig]
       );
-    // 缓存
+    this.container
+      .bind<Provider<object | undefined>>(SYMBOLS.ConfigProvider)
+      .toProvider((ctx) => {
+        const coreConfig = ctx.get<CoreConfig>(SYMBOLS.CoreConfig);
+        return async (name?: string) => await coreConfig.get(name);
+      });
+    // Cache
     this.container
       .bind(SYMBOLS.Cache)
       .toResolvedValue(
         (config: IConfig) => new ACache(config.cache),
         [SYMBOLS.Config]
       );
-    // 日志
+    // Logger
     this.container
       .bind(SYMBOLS.Logger)
       .toResolvedValue(
         (config: IConfig) => new WinstonLogger(config.logger).logger,
         [SYMBOLS.Config]
       );
-    // 中间件
+    // IocAdapter
     this.container
       .bind<IocAdapter>(SYMBOLS.IocAdapter)
       .toConstantValue(new InversifyAdapter(this.container));
-    // 数据库
+    // DataSource
     this.container
       .bind(SYMBOLS.DataSource)
       .toResolvedValue(
@@ -77,12 +77,14 @@ class DI {
         (logger: Logger) => new Middleware(logger),
         [SYMBOLS.Logger]
       );
+    //GracefulExit
     this.container
       .bind(SYMBOLS.GracefulExit)
       .toResolvedValue(
         (logger: Logger) => new GracefulExit(logger),
         [SYMBOLS.Logger]
       );
+    //CreateServer
     this.container
       .bind<CreateServer>(SYMBOLS.CreateServer)
       .toResolvedValue(
@@ -90,6 +92,7 @@ class DI {
           new CreateServer(iocAdapter, logger),
         [SYMBOLS.IocAdapter, SYMBOLS.Logger]
       );
+    //Anyme
     this.container.bind<Provider<Anyme>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: Anyme | undefined = undefined;
       return async (app: Application) => {

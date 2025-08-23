@@ -10,7 +10,6 @@ import {
 import type {
   DeepPartial,
   UserConfig,
-  LoadEnvOptions,
   ConfigOptions,
   PackageJson,
   CtxArgs,
@@ -80,54 +79,11 @@ export function isEmpty<T>(value: T) {
 export function isFunction(value: unknown): value is (...args: any[]) => any {
   return (
     typeof value === "function" &&
-    Object.prototype.toString.call(value) === "[object Function]"
+    (Object.prototype.toString.call(value) === "[object Function]" ||
+      Object.prototype.toString.call(value) === "[object AsyncFunction]")
   );
 }
-// 专用文件加载函数
-function loadSingleEnv(path: string, override: boolean) {
-  const envContent = readFileSync(path, "utf8");
-  for (const line of envContent.split(/\r?\n/)) {
-    // 跳过空行和注释
-    if (!line.trim() || line.trim().startsWith("#")) continue;
-    // 高效分割键值
-    const sepIndex = line.indexOf("=");
-    if (sepIndex === -1) continue;
-    const key = line.slice(0, sepIndex).trim();
-    if (!key) continue;
-    // 处理值（包括引号）
-    let value = line.slice(sepIndex + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    // 根据覆盖规则设置环境变量
-    if (override || !(key in process.env)) {
-      process.env[key] = value;
-    }
-  }
-}
-export function loadEnv(path?: string | string[], options?: LoadEnvOptions) {
-  const paths = Array.isArray(path) ? path : [path || ".env"];
-  const cwd = options?.cwd || process.cwd();
-  const override = options?.override || false;
-  for (const p of paths) {
-    // 解析绝对路径
-    const absolutePath = getAbsolutePath(p);
-    if (!existsSync(absolutePath)) continue;
-    try {
-      if (override) loadSingleEnv(absolutePath, true);
-      else {
-        if (typeof process?.loadEnvFile === "function")
-          process.loadEnvFile(absolutePath);
-        else loadSingleEnv(absolutePath, false);
-      }
-    } catch (error) {
-      console.error(`[loadEnv] ${absolutePath}: ${(error as Error).message}`);
-    }
-  }
-}
+
 /**
  * 验证并处理加密密钥
  * 如果密钥长度为32字节则直接使用，否则使用SHA-256哈希算法处理成32字节
@@ -251,6 +207,7 @@ export function defineConfig(configOptions: ConfigOptions): UserConfig {
   if (!isFunction(configOptions)) return configOptions;
   return configOptions(ctx());
 }
+
 export function all<T, U>(
   iterable: Iterable<T> | ArrayLike<T>,
   mapfn: (v: T, k: number) => U,

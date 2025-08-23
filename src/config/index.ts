@@ -27,7 +27,7 @@ export class CoreConfig {
     if (!name) return await this.loadCore();
     if (this.configs.has(name)) return this.configs.get(name)!;
     if (this.fileGroups.has(name)) {
-      const module = await this.loadConfig(this.fileGroups.get(name)!);
+      const module = await this.importConfig(this.fileGroups.get(name)!);
       if (!isEmpty(module)) {
         this.configs.set(name, module);
         return module;
@@ -38,7 +38,7 @@ export class CoreConfig {
   async loadCore() {
     if (this.configs.has("core") || isEmpty(this.fileGroups))
       return this.#config;
-    await this.loadAll();
+    await this.loadAllConfigs();
     this.#config = deepMerge(this.#config, ...this.getCoreConfigs());
     this.loadEnvConfig();
     this.resolveServerPaths();
@@ -60,9 +60,9 @@ export class CoreConfig {
     }
     return configs;
   }
-  private loadAll() {
+  private loadAllConfigs() {
     return all(this.fileGroups, async ([key, path]) => {
-      const module = await this.loadConfig(path);
+      const module = await this.importConfig(path);
       if (!isEmpty(module)) this.configs.set(key, module);
       return module;
     });
@@ -90,7 +90,7 @@ export class CoreConfig {
     }
     return fileGroups;
   }
-  private async loadConfig(path: string) {
+  private async importConfig(path: string) {
     try {
       const module = await importModule(path);
       const result = isFunction(module) ? module(ctx()) : module;
