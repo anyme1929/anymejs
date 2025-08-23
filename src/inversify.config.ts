@@ -23,7 +23,7 @@ class DI {
   static registered = false;
   static register() {
     if (this.registered) return;
-    // 0. 注册配置服务 getAsync 获取
+    // 配置
     this.container.bind(SYMBOLS.CoreConfig).to(CoreConfig);
     this.container
       .bind<Provider<any[] | IConfig>>(SYMBOLS.ConfigProvider)
@@ -37,23 +37,25 @@ class DI {
         async (coreConfig: CoreConfig) => await coreConfig.loadCore(),
         [SYMBOLS.CoreConfig]
       );
+    // 缓存
     this.container
       .bind(SYMBOLS.Cache)
       .toResolvedValue(
         (config: IConfig) => new ACache(config.cache),
         [SYMBOLS.Config]
       );
+    // 日志
     this.container
       .bind(SYMBOLS.Logger)
       .toResolvedValue(
         (config: IConfig) => new WinstonLogger(config.logger).logger,
         [SYMBOLS.Config]
       );
-
+    // 中间件
     this.container
       .bind<IocAdapter>(SYMBOLS.IocAdapter)
       .toConstantValue(new InversifyAdapter(this.container));
-    // 注册数据库连接服务
+    // 数据库
     this.container
       .bind(SYMBOLS.DataSource)
       .toResolvedValue(
@@ -61,14 +63,14 @@ class DI {
         [SYMBOLS.Logger, SYMBOLS.Config]
       );
 
-    // 注册 Redis 服务
+    // Redis
     this.container
       .bind(SYMBOLS.Redis)
       .toResolvedValue(
         (config: IConfig, logger: Logger) => new ARedis(config.redis, logger),
         [SYMBOLS.Config, SYMBOLS.Logger]
       );
-
+    // Middleware
     this.container
       .bind(SYMBOLS.Middleware)
       .toResolvedValue(
@@ -81,8 +83,6 @@ class DI {
         (logger: Logger) => new GracefulExit(logger),
         [SYMBOLS.Logger]
       );
-
-    // 6. 注册服务器创建服务
     this.container
       .bind<CreateServer>(SYMBOLS.CreateServer)
       .toResolvedValue(
