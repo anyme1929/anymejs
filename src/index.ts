@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import "./utils/env";
 import DI from "./inversify.config";
+DI.register();
 export { defineConfig, ENC } from "./utils";
 export { type IRedis, type ICache } from "./types";
 export const createApp = DI.createApp;
@@ -17,5 +18,3 @@ createApp(express()).then((app) => {
   app.use(express.urlencoded({ extended: true }));
   app.bootstrap();
 });
-import { CoreConfig } from "./config/index-base";
-new CoreConfig().load();

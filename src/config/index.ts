@@ -25,13 +25,8 @@ export class CoreConfig {
   }
   async get(name?: string) {
     if (!name) return await this.loadCore();
-    if (this.configs.has(name)) return this.configs.get(name);
-    if (this.fileGroups.has(name)) {
-      const module = await this.loadConfig(this.fileGroups.get(name)!);
-      this.configs.set(name, module);
-      return module;
-    }
-    return undefined;
+    if (this.configs.has(name)) return this.configs.get(name)!;
+    return;
   }
   async loadCore() {
     if (this.configs.has("core") || isEmpty(this.fileGroups))

@@ -26,7 +26,7 @@ class DI {
     // 配置
     this.container.bind(SYMBOLS.CoreConfig).to(CoreConfig);
     this.container
-      .bind<Provider<any[] | IConfig>>(SYMBOLS.ConfigProvider)
+      .bind<Provider<object | undefined>>(SYMBOLS.ConfigProvider)
       .toProvider((ctx) => {
         const coreConfig = ctx.get<CoreConfig>(SYMBOLS.CoreConfig);
         return async (name?: string) => await coreConfig.get(name);
@@ -163,5 +163,5 @@ class DI {
     return inject(token);
   };
 }
-DI.register();
+
 export default DI;

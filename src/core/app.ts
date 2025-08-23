@@ -43,7 +43,7 @@ export class Anyme {
       throw error;
     }
   }
-  protected async initialize() {
+  private async initialize() {
     try {
       await Promise.all([this.initDatabase(), this.initRedis()]);
       this.middleware.applySession(this.config.session, this.redis);
