@@ -17,20 +17,49 @@ import type {
 } from "../types";
 import { ENC_DEFAULT_KEY, IV_LENGTH } from "./constants";
 
+// export function deepMerge<T extends Record<string, any>>(
+//   target: T,
+//   ...sources: DeepPartial<T>[]
+// ): T {
+//   if (!sources.length) return target;
+//   const result = { ...target };
+//   for (const source of sources) {
+//     for (const key in source) {
+//       if (isObject(source[key]) && key in target)
+//         result[key] = deepMerge(target[key], source[key]);
+//       else result[key] = source[key] as any;
+//     }
+//   }
+//   return result;
+// }
+export function merge<T extends Record<string, any>>(
+  target: T,
+  source: DeepPartial<T>
+) {
+  if (!isObject(source)) return target as T;
+  if (!isObject(target)) return source as T;
+  const result = { ...target } as Record<string, any>;
+  [...Object.keys(source)].forEach((key) => {
+    if (isObject(target[key]) && isObject(source[key])) {
+      result[key] = merge(target[key], source[key]);
+    } else result[key] = source[key];
+  });
+  return result as T;
+}
 export function deepMerge<T extends Record<string, any>>(
   target: T,
   ...sources: DeepPartial<T>[]
 ): T {
-  if (!sources.length) return target;
-  const result = { ...target };
-  for (const source of sources) {
-    for (const key in source) {
-      if (isObject(source[key]) && key in target)
-        result[key] = deepMerge(target[key], source[key]);
-      else result[key] = source[key] as any;
-    }
-  }
-  return result;
+  // 处理空源数组情况
+  if (sources.length === 0) return { ...target };
+  // 累计合并所有源对象
+  return [...sources].reduce(
+    (acc, source) => {
+      if (isEmpty(source)) return acc;
+      return merge(acc, source);
+    },
+    { ...target }
+  );
 }
 export function isObject(obj: unknown): obj is Record<string, unknown> {
   return (
@@ -101,7 +130,7 @@ export function loadEnv(path?: string | string[], options?: LoadEnvOptions) {
   const override = options?.override || false;
   for (const p of paths) {
     // 解析绝对路径
-    const absolutePath = isAbsolute(p) ? p : resolve(cwd, p);
+    const absolutePath = getAbsolutePath(p);
     if (!existsSync(absolutePath)) continue;
     try {
       if (override) loadSingleEnv(absolutePath, true);
@@ -136,21 +165,14 @@ export function getEncryptionKey() {
  * @returns 加密后的字符串，格式为"iv:encryptedData"
  */
 export function encrypt(text: string, key: string): string {
-  try {
-    const keyBuffer = validateKey(key);
-    const iv = randomBytes(IV_LENGTH);
-    const cipher = createCipheriv("aes-256-cbc", keyBuffer, iv);
-    let encrypted = cipher.update(text, "utf8");
-    encrypted = Buffer.concat([encrypted, cipher.final()]);
-    // 返回IV和加密数据的十六进制拼接
-    return `${iv.toString("hex")}:${encrypted.toString("hex")}`;
-  } catch (error) {
-    console.error(
-      "Encryption failed:",
-      error instanceof Error ? error.message : String(error)
-    );
-    throw error;
-  }
+  if (isEmpty(key)) throw new Error("Encryption key cannot be empty");
+  const keyBuffer = validateKey(key);
+  const iv = randomBytes(IV_LENGTH);
+  const cipher = createCipheriv("aes-256-cbc", keyBuffer, iv);
+  let encrypted = cipher.update(text, "utf8");
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  // 返回IV和加密数据的十六进制拼接
+  return `${iv.toString("hex")}:${encrypted.toString("hex")}`;
 }
 
 /**
@@ -160,35 +182,27 @@ export function encrypt(text: string, key: string): string {
  * @returns 解密后的明文
  */
 export function decrypt(encryptedText: string, key: string): string {
-  try {
-    const keyBuffer = validateKey(key);
-    const [ivHex, encryptedHex] = encryptedText.split(":");
+  const keyBuffer = validateKey(key);
+  const [ivHex, encryptedHex] = encryptedText.split(":");
 
-    // 验证加密文本格式
-    if (!ivHex || !encryptedHex) {
-      throw new Error(
-        'Invalid encrypted text format. Expected "iv:encryptedData"'
-      );
-    }
-    const iv = Buffer.from(ivHex, "hex");
-    // 验证IV长度
-    if (iv.length !== IV_LENGTH) {
-      throw new Error(
-        `Invalid IV length: ${iv.length} bytes. Expected ${IV_LENGTH} bytes.`
-      );
-    }
-    const encrypted = Buffer.from(encryptedHex, "hex");
-    const decipher = createDecipheriv("aes-256-cbc", keyBuffer, iv);
-    let decrypted = decipher.update(encrypted);
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return decrypted.toString("utf8");
-  } catch (error) {
-    console.error(
-      "Decryption failed:",
-      error instanceof Error ? error.message : String(error)
+  // 验证加密文本格式
+  if (!ivHex || !encryptedHex) {
+    throw new Error(
+      'Invalid encrypted text format. Expected "iv:encryptedData"'
     );
-    throw error;
   }
+  const iv = Buffer.from(ivHex, "hex");
+  // 验证IV长度
+  if (iv.length !== IV_LENGTH) {
+    throw new Error(
+      `Invalid IV length: ${iv.length} bytes. Expected ${IV_LENGTH} bytes.`
+    );
+  }
+  const encrypted = Buffer.from(encryptedHex, "hex");
+  const decipher = createDecipheriv("aes-256-cbc", keyBuffer, iv);
+  let decrypted = decipher.update(encrypted);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted.toString("utf8");
 }
 export function getAbsolutePath(path: string) {
   return isAbsolute(path) ? path : resolve(path);

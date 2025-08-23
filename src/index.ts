@@ -17,3 +17,5 @@ createApp(express()).then((app) => {
   app.use(express.urlencoded({ extended: true }));
   app.bootstrap();
 });
+import { CoreConfig } from "./config/index-base";
+new CoreConfig().load();

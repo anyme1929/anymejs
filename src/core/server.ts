@@ -1,11 +1,14 @@
-import { useExpressServer, useContainer } from "routing-controllers";
+import {
+  useExpressServer,
+  useContainer,
+  type IocAdapter,
+} from "routing-controllers";
 import { createServer as createHttps } from "node:https";
 import { createServer as createHttp } from "node:http";
 import { readFileSync } from "node:fs";
 import { getAbsolutePath } from "../utils";
 import type {
   Application,
-  IocAdapter,
   IServer,
   IConfig,
   ICreateServer,

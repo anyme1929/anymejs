@@ -1,5 +1,5 @@
-import { DataSource } from "typeorm";
-import { IConfig, Logger, DataSourceOptions, IDataSource } from "../types";
+import { DataSource, type DataSourceOptions } from "typeorm";
+import { IConfig, Logger, IDataSource } from "../types";
 import { deepMerge, isEmpty } from "../utils";
 export class ADataSource implements IDataSource {
   private dataSourceMap: Map<string, DataSource> = new Map();

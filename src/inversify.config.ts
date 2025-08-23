@@ -1,5 +1,6 @@
-import { createParamDecorator } from "routing-controllers";
+import { createParamDecorator, type IocAdapter } from "routing-controllers";
 import { Container, inject, type Provider } from "inversify";
+import { type EntityTarget, type ObjectLiteral } from "typeorm";
 import { CoreConfig } from "./config";
 import { SYMBOLS } from "./utils/constants";
 import InversifyAdapter from "./utils/inversify-adapter";
@@ -13,14 +14,7 @@ import {
   Middleware,
   GracefulExit,
 } from "./core";
-import type {
-  Application,
-  Logger,
-  IConfig,
-  IocAdapter,
-  EntityTarget,
-  ObjectLiteral,
-} from "./types";
+import type { Application, Logger, IConfig } from "./types";
 class DI {
   static container: Container = new Container({
     autobind: true,
@@ -35,12 +29,12 @@ class DI {
       .bind<Provider<any[] | IConfig>>(SYMBOLS.ConfigProvider)
       .toProvider((ctx) => {
         const coreConfig = ctx.get<CoreConfig>(SYMBOLS.CoreConfig);
-        return async (name?: string) => await coreConfig.load(name);
+        return async (name?: string) => await coreConfig.get(name);
       });
     this.container
       .bind(SYMBOLS.Config)
       .toResolvedValue(
-        async (coreConfig: CoreConfig) => await coreConfig.load(),
+        async (coreConfig: CoreConfig) => await coreConfig.loadCore(),
         [SYMBOLS.CoreConfig]
       );
     this.container
@@ -98,17 +92,16 @@ class DI {
       );
     this.container.bind<Provider<Anyme>>(SYMBOLS.App).toProvider((ctx) => {
       let instance: Anyme | undefined = undefined;
-      return async (express: Application) => {
+      return async (app: Application) => {
         if (!instance)
           instance = new Anyme(
-            express,
+            app,
             await ctx.getAsync<IConfig>(SYMBOLS.Config),
             ctx.get<Logger>(SYMBOLS.Logger),
             ctx.get<CreateServer>(SYMBOLS.CreateServer),
             ctx.get<GracefulExit>(SYMBOLS.GracefulExit),
             ctx.get<Middleware>(SYMBOLS.Middleware),
             ctx.get<ARedis>(SYMBOLS.Redis),
-            ctx.get<ACache>(SYMBOLS.Cache),
             ctx.get<ADataSource>(SYMBOLS.DataSource)
           );
         return instance;
@@ -116,8 +109,8 @@ class DI {
     });
     this.registered = true;
   }
-  static createApp = (express: Application): Promise<Anyme> =>
-    this.container.get<Provider<Anyme>>(SYMBOLS.App)(express);
+  static createApp = (app: Application): Promise<Anyme> =>
+    this.container.get<Provider<Anyme>>(SYMBOLS.App)(app);
   static Redis = (key?: string) => {
     return createParamDecorator({
       value: () => this.container.get<ARedis>(SYMBOLS.Redis).get(key),

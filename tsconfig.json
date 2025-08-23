@@ -28,5 +28,5 @@
       "allowSyntheticDefaultImports": true
     }
   },
-  "include": ["**/*.ts"] // 包含的源文件路径
+  "include": ["**/*.ts", "config/default.config.js"] // 包含的源文件路径
 }

@@ -9,7 +9,6 @@ import type {
   ICreateServer,
   IMiddleware,
   Application,
-  RequestHandler,
 } from "../types";
 export class Anyme {
   private server: IServer | null = null;
@@ -21,7 +20,6 @@ export class Anyme {
     private gracefulExit: IGracefulExit,
     private middleware: IMiddleware,
     private redis: IRedis,
-    private cache: ICache,
     private dataSource: IDataSource
   ) {
     this.middleware.register(this.app);
@@ -81,7 +79,8 @@ export class Anyme {
       throw error;
     }
   }
-  use(...handlers: RequestHandler[]) {
-    return this.app.use(...handlers);
+  use<T extends (...args: any[]) => any>(...handlers: T[]) {
+    this.app.use(...handlers);
+    return this;
   }
 }

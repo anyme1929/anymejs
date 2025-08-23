@@ -7,13 +7,13 @@ import type {
 } from "ioredis";
 import type { SessionOptions } from "express-session";
 import type { DataSourceOptions, DataSource } from "typeorm";
+import type { Application } from "express";
 import type { RoutingControllersOptions } from "routing-controllers";
-import type { Application, RequestHandler, Request } from "express";
 import type { Logger, Logform, transports } from "winston";
 import type { DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import type { Options as RateLimitOptions } from "express-rate-limit";
 import type { Options as SlowDownOptions } from "express-slow-down";
-
+export type { Application, Logger };
 export interface HealthCheckMap {
   verbatim?: boolean;
   __unsafeExposeStackTraces?: boolean;
@@ -189,7 +189,6 @@ export interface ICreateServer {
 }
 
 export interface IMiddleware {
-  bind(value: (arg: Request) => void): IMiddleware;
   register(app: Application): IMiddleware;
   applySession(config: IConfig["session"], redis?: IRedis);
   applyRoute();

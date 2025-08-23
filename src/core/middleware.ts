@@ -4,7 +4,7 @@ import { WELLCOME_HTML } from "../utils/constants";
 import session from "express-session";
 import RedisStore from "../utils/session-ioredis";
 import { encrypt, getEncryptionKey } from "../utils";
-import { Application, IConfig, IMiddleware, IRedis, Logger } from "../types";
+import { IConfig, IMiddleware, IRedis, Logger, Application } from "../types";
 export class Middleware implements IMiddleware {
   private app!: Application;
   private isInitialized: boolean = false;
@@ -18,11 +18,11 @@ export class Middleware implements IMiddleware {
   applyRoute() {
     if (!this.isInitialized) throw new Error("Middleware not initialized");
     this.app
-      .get("/", (_, res) => {
+      .get("/", (_: any, res: any) => {
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.send(WELLCOME_HTML);
       })
-      .get("/encrypt/:text", (req, res) =>
+      .get("/encrypt/:text", (req: any, res: any) =>
         res.send(encrypt(req.params.text, getEncryptionKey()))
       );
   }
@@ -65,12 +65,5 @@ export class Middleware implements IMiddleware {
       this.logger.error("❌ Failed to config session:", error);
       throw error;
     }
-  }
-  bind(value: (arg: any) => void) {
-    this.app.use((req, _, next) => {
-      value(req);
-      next();
-    });
-    return this;
   }
 }
