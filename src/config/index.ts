@@ -26,10 +26,8 @@ export class CoreConfig {
   async get(name?: string) {
     if (!name) return await this.loadCore();
     if (this.configs.has(name)) return this.configs.get(name)!;
-    // 尝试加载指定配置（如果需要懒加载）
-    const configPath = this.fileGroups.get(name);
-    if (configPath) {
-      const module = await this.loadConfig(configPath);
+    if (this.fileGroups.has(name)) {
+      const module = await this.loadConfig(this.fileGroups.get(name)!);
       if (!isEmpty(module)) {
         this.configs.set(name, module);
         return module;
