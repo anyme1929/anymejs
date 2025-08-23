@@ -21,12 +21,21 @@ export class CoreConfig {
   private ignore: string[] = ["**/node_modules/**", "**/dist/**", "**/*.d.ts"];
   private order: string[] = [".ts", ".js", ".mjs", ".cjs", ".json"];
   constructor() {
-    this.fileGroups = this.Group(this.loadPaths());
+    this.fileGroups = this.groupConfigs(this.loadPaths());
   }
   async get(name?: string) {
     if (!name) return await this.loadCore();
     if (this.configs.has(name)) return this.configs.get(name)!;
-    return;
+    // 尝试加载指定配置（如果需要懒加载）
+    const configPath = this.fileGroups.get(name);
+    if (configPath) {
+      const module = await this.loadConfig(configPath);
+      if (!isEmpty(module)) {
+        this.configs.set(name, module);
+        return module;
+      }
+    }
+    return undefined;
   }
   async loadCore() {
     if (this.configs.has("core") || isEmpty(this.fileGroups))
@@ -68,7 +77,7 @@ export class CoreConfig {
     });
   }
 
-  private Group(paths: string[]) {
+  private groupConfigs(paths: string[]) {
     const fileGroups = new Map<string, string>();
     for (const path of paths) {
       const ext = extname(path);
