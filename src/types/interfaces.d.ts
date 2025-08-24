@@ -7,15 +7,19 @@ import type {
 } from "ioredis";
 import type { SessionOptions } from "express-session";
 import type { DataSourceOptions, DataSource } from "typeorm";
-import type { Application } from "express";
+import type { Application, Request, Response } from "express";
 import type { RoutingControllersOptions } from "routing-controllers";
 import type { Logger, Logform, transports } from "winston";
 import type { DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import type { Options as RateLimitOptions } from "express-rate-limit";
 import type { Options as SlowDownOptions } from "express-slow-down";
-import type { SSEOptions, type SSE } from "../core/sse";
+import type { SSEOptions } from "../core/sse";
 import type { CacheOptions } from "../core/cache";
 export type { Application, Logger };
+
+// ==========================================
+// 核心服务接口
+// ==========================================
 
 /**
  * 自定义Server接口，用于替换直接依赖node:http的Server类型
@@ -56,12 +60,30 @@ export interface IServer {
   on(event: "error", listener: (err: Error) => void): this;
   on(event: "listening", listener: () => void): this;
 }
+
+// ==========================================
+// 配置相关接口
+// ==========================================
+
+export interface ICoreConfig {
+  get(): Promise<IConfig>;
+  get(name: string): Promise<any>;
+}
+
+/**
+ * Redis集群配置选项
+ */
 export interface RedisClusterOpt {
   cluster: boolean;
   node: ClusterNode[];
   options?: ClusterOptions;
 }
+
+/**
+ * Redis配置选项类型
+ */
 export type RedisOpt = RedisOptions | RedisClusterOpt;
+
 /**
  * 应用程序配置接口，包含所有可配置项
  */
@@ -152,16 +174,32 @@ export interface IConfig {
       [key: string]: {
         initial?: unknown | unknown[];
         options?: SSEOptions;
-        controller: (args: SSE) => void;
+        controller: ((arg: Ctx) => void) | string;
       };
     };
   };
 }
+
+// ==========================================
+// 应用上下文和核心功能接口
+// ==========================================
+
+export interface Ctx {
+  logger: Logger;
+  cache: ICache;
+  redis: Cluster | Redis;
+  dataSource: DataSource;
+  sse?: SSE;
+  request?: Request;
+  response?: Response;
+}
+
 export interface HealthCheckMap {
   verbatim?: boolean;
   __unsafeExposeStackTraces?: boolean;
   [key: string]: HealthCheck | boolean | undefined;
 }
+
 /**
  * GracefulExit 类的接口定义，包含优雅退出功能的相关属性和方法
  */
@@ -200,17 +238,27 @@ export interface ICreateServer {
   bootstrap(port?: number): Promise<IServer>;
 }
 
+// ==========================================
+// 中间件和处理器接口
+// ==========================================
+
 export interface IMiddleware {
   register(app: Application): IMiddleware;
   applySession(config: IConfig["session"], redis?: IRedis);
   applyRoute();
   applyLimiter(config: IConfig["limiter"]);
-  applySSE(config: IConfig["sse"]);
+  applySSE(config: IConfig["sse"], ctx: any);
 }
+
 export interface IHandler {
   name: string;
   handle: RequestHandler;
 }
+
+// ==========================================
+// 数据存储接口
+// ==========================================
+
 export interface IRedis {
   connectAll(): Promise<
     (
@@ -229,6 +277,7 @@ export interface IRedis {
   close(name?: string): Promise<void>;
   closeAll(): Promise<void>;
 }
+
 export interface IDataSource {
   connectAll(): Promise<void[]>;
   get(name?: string): DataSource;
@@ -236,88 +285,10 @@ export interface IDataSource {
   close(name?: string): Promise<void>;
   closeAll(): Promise<void>;
 }
-export interface PackageJson {
-  name: string;
-  version: string;
-  description?: string;
-  keywords?: string[];
-  homepage?: string;
-  bugs?: {
-    url?: string;
-    email?: string;
-  };
-  license?: string;
-  author?:
-    | string
-    | {
-        name: string;
-        email?: string;
-        url?: string;
-      };
-  contributors?: (
-    | string
-    | {
-        name: string;
-        email?: string;
-        url?: string;
-      }
-  )[];
-  files?: string[];
-  main?: string;
-  browser?: string;
-  bin?: string | Record<string, string>;
-  man?: string | string[];
-  directories?: {
-    lib?: string;
-    bin?: string;
-    man?: string;
-    doc?: string;
-    example?: string;
-    test?: string;
-  };
-  repository?:
-    | {
-        type: string;
-        url: string;
-        directory?: string;
-      }
-    | string;
-  scripts?: Record<string, string>;
-  config?: Record<string, any>;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-  peerDependencies?: Record<string, string>;
-  optionalDependencies?: Record<string, string>;
-  bundledDependencies?: string[];
-  engines?: {
-    node?: string;
-    npm?: string;
-    yarn?: string;
-  };
-  os?: string[];
-  cpu?: string[];
-  private?: boolean;
-  publishConfig?: {
-    access?: "public" | "restricted";
-    registry?: string;
-    tag?: string;
-  };
-  workspaces?:
-    | string[]
-    | {
-        packages?: string[];
-        nohoist?: string[];
-      };
-}
-export interface CtxArgs {
-  name: string;
-  version: string;
-  pkg: PackageJson;
-  env: string;
-  ENC: (text: string) => string;
-  ROOT: string;
-  HOME: string;
-}
+
+// ==========================================
+// 缓存接口
+// ==========================================
 
 /**
  * 内存缓存接口定义
@@ -413,4 +384,92 @@ export interface ICache<T = any> {
    * 关闭缓存，清理资源
    */
   close(): void;
+}
+
+// ==========================================
+// 项目配置接口
+// ==========================================
+
+export interface PackageJson {
+  name: string;
+  version: string;
+  description?: string;
+  keywords?: string[];
+  homepage?: string;
+  bugs?: {
+    url?: string;
+    email?: string;
+  };
+  license?: string;
+  author?:
+    | string
+    | {
+        name: string;
+        email?: string;
+        url?: string;
+      };
+  contributors?: (
+    | string
+    | {
+        name: string;
+        email?: string;
+        url?: string;
+      }
+  )[];
+  files?: string[];
+  main?: string;
+  browser?: string;
+  bin?: string | Record<string, string>;
+  man?: string | string[];
+  directories?: {
+    lib?: string;
+    bin?: string;
+    man?: string;
+    doc?: string;
+    example?: string;
+    test?: string;
+  };
+  repository?:
+    | {
+        type: string;
+        url: string;
+        directory?: string;
+      }
+    | string;
+  scripts?: Record<string, string>;
+  config?: Record<string, any>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  bundledDependencies?: string[];
+  engines?: {
+    node?: string;
+    npm?: string;
+    yarn?: string;
+  };
+  os?: string[];
+  cpu?: string[];
+  private?: boolean;
+  publishConfig?: {
+    access?: "public" | "restricted";
+    registry?: string;
+    tag?: string;
+  };
+  workspaces?:
+    | string[]
+    | {
+        packages?: string[];
+        nohoist?: string[];
+      };
+}
+
+export interface ConfigArgs {
+  name: string;
+  version: string;
+  pkg: PackageJson;
+  env: string;
+  ENC: (text: string) => string;
+  ROOT: string;
+  HOME: string;
 }

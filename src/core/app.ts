@@ -2,23 +2,27 @@ import type {
   IConfig,
   IDataSource,
   IRedis,
+  ICache,
   IGracefulExit,
   Logger,
   IServer,
   ICreateServer,
+  ICoreConfig,
   IMiddleware,
   Application,
+  Ctx,
 } from "../types";
 export class Anyme {
   private server: IServer | null = null;
   constructor(
     private app: Application,
-    private config: IConfig,
+    private config: ICoreConfig,
     private logger: Logger,
     private createServer: ICreateServer,
     private gracefulExit: IGracefulExit,
     private middleware: IMiddleware,
     private redis: IRedis,
+    private cache: ICache,
     private dataSource: IDataSource
   ) {
     this.middleware.register(this.app);
@@ -27,8 +31,9 @@ export class Anyme {
     if (this.server) return this.server;
     try {
       await this.initialize();
+      const config = await this.config.get();
       this.server = await this.createServer
-        .init(this.app, this.config.server)
+        .init(this.app, config.server)
         .bootstrap(port);
       this.gracefulExit.register(this.server, {
         healthCheck: {
@@ -43,12 +48,27 @@ export class Anyme {
       throw error;
     }
   }
+  use<T extends (...args: any[]) => any>(...handlers: T[]) {
+    this.app.use(...handlers);
+    return this;
+  }
+  private async getCtx(): Promise<Ctx> {
+    return {
+      cache: this.cache,
+      logger: this.logger,
+      redis: this.redis.get(),
+      dataSource: this.dataSource.get(),
+    };
+  }
   private async initialize() {
     try {
+      const config = await this.config.get();
       await Promise.all([this.initDatabase(), this.initRedis()]);
-      await this.middleware.applyLimiter(this.config.limiter);
-      await this.middleware.applySession(this.config.session, this.redis);
-      await this.middleware.applySSE(this.config.sse);
+      await this.middleware.applyLimiter(config.limiter);
+      await this.middleware.applySession(config.session, this.redis);
+      await this.middleware.applySSE(config.sse, {
+        ...this.getCtx(),
+      });
       await this.middleware.applyRoute();
     } catch (error) {
       this.logger.error("❌ Failed to initialize", error);
@@ -57,7 +77,8 @@ export class Anyme {
   }
   private async initDatabase() {
     try {
-      if (this.config.db.enable === false) return;
+      const { db } = await this.config.get();
+      if (db.enable === false) return;
       const result = await this.dataSource.connectAll();
       if (result.length > 0)
         this.gracefulExit.addCleanupTask(() => this.dataSource.closeAll());
@@ -68,7 +89,8 @@ export class Anyme {
   }
   private async initRedis() {
     try {
-      if (!this.config.redis.enable) return;
+      const { redis } = await this.config.get();
+      if (!redis.enable) return;
       const result = await this.redis.connectAll();
       if (result.length > 0)
         this.gracefulExit.addCleanupTask(() => this.redis.closeAll());
@@ -76,9 +98,5 @@ export class Anyme {
       this.logger.error("❌ Failed to init Redis", error);
       throw error;
     }
-  }
-  use<T extends (...args: any[]) => any>(...handlers: T[]) {
-    this.app.use(...handlers);
-    return this;
   }
 }

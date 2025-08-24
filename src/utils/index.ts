@@ -12,7 +12,7 @@ import type {
   UserConfig,
   ConfigOptions,
   PackageJson,
-  CtxArgs,
+  ConfigArgs,
 } from "../types";
 import { ENC_DEFAULT_KEY, IV_LENGTH } from "./constants";
 export function merge<T extends Record<string, any>>(
@@ -234,7 +234,7 @@ export function set(str: string, value: any) {
   return result;
 }
 
-export function ctx(): CtxArgs {
+export function ctx(): ConfigArgs {
   const pkg = readPackage();
   return {
     name: pkg!.name ?? "anyme",

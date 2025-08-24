@@ -1,8 +1,15 @@
 import { WELLCOME_HTML } from "../utils/constants";
 import session from "express-session";
 import RedisStore from "../utils/session-ioredis";
-import { encrypt, getEncryptionKey, importModule } from "../utils";
-import { IConfig, IMiddleware, IRedis, Logger, Application } from "../types";
+import { encrypt, getEncryptionKey, importModule, isFunction } from "../utils";
+import {
+  IConfig,
+  IMiddleware,
+  IRedis,
+  Logger,
+  Application,
+  Ctx,
+} from "../types";
 import { SSE } from "./sse";
 export class Middleware implements IMiddleware {
   private app!: Application;
@@ -66,12 +73,20 @@ export class Middleware implements IMiddleware {
       throw error;
     }
   }
-  async applySSE(config: IConfig["sse"]) {
+  async applySSE(config: IConfig["sse"], ctx: Ctx) {
     if (!config.enable) return;
     Object.entries(config.routes!).forEach(([path, opt]) => {
       const sse = new SSE(opt.initial, opt.options);
-      this.app.use(path, sse.init);
-      opt.controller(sse);
+      this.app.use(path, (req, res) => {
+        sse.init(req, res);
+        if (isFunction(opt.controller))
+          opt.controller({
+            request: req,
+            response: res,
+            sse,
+            ...ctx,
+          });
+      });
     });
   }
 }

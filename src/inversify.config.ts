@@ -99,17 +99,19 @@ class DI {
         if (!instance)
           instance = new Anyme(
             app,
-            await ctx.getAsync<IConfig>(SYMBOLS.Config),
-            ctx.get<Logger>(SYMBOLS.Logger),
+            ctx.get<CoreConfig>(SYMBOLS.CoreConfig),
+            await ctx.getAsync<Logger>(SYMBOLS.Logger),
             ctx.get<CreateServer>(SYMBOLS.CreateServer),
             ctx.get<GracefulExit>(SYMBOLS.GracefulExit),
             ctx.get<Middleware>(SYMBOLS.Middleware),
             ctx.get<ARedis>(SYMBOLS.Redis),
+            ctx.get<ACache>(SYMBOLS.Cache),
             ctx.get<ADataSource>(SYMBOLS.DataSource)
           );
         return instance;
       };
     });
+
     this.registered = true;
   }
   static createApp = (app: Application): Promise<Anyme> =>
