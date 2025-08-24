@@ -6,3 +6,4 @@ export { ADataSource } from "./db";
 export { ARedis } from "./redis";
 export { Middleware } from "./middleware";
 export { GracefulExit } from "./exit";
+export { SSE } from "./sse";

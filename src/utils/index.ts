@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve, isAbsolute, extname } from "node:path";
+import { resolve, isAbsolute, extname, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   randomBytes,
@@ -147,27 +147,71 @@ export function decrypt(encryptedText: string, key: string): string {
 export function getAbsolutePath(path: string) {
   return isAbsolute(path) ? path : resolve(path);
 }
-//获取相对路径
-
-export async function importModule<T = any>(path: string): Promise<T> {
-  path = getAbsolutePath(path);
-  if (extname(path) === ".json") {
-    try {
-      return JSON.parse(readFileSync(path, "utf-8"));
-    } catch (error) {
-      console.error(`Failed to parse JSON config at ${path}:`, error);
-      return {} as T;
-    }
+function readPackage(): PackageJson {
+  const pkgPath = resolve("package.json");
+  if (!existsSync(pkgPath)) throw new Error("package.json not found");
+  return JSON.parse(readFileSync(pkgPath, "utf8"));
+}
+function isPackage(path: string): boolean {
+  // 处理scoped包（如@vue/reactivity）
+  const isScopedPackage = path.startsWith("@") && path.split("/").length === 2;
+  if (isScopedPackage) return true;
+  // 相对路径（含./或../）不是包
+  if (path.startsWith("./") || path.startsWith("../")) return false;
+  // 绝对路径不是包
+  if (isAbsolute(path)) return false;
+  // 包含路径分隔符（且不是scoped包）的不是包（如./node_modules/xxx、a/b/c）
+  const hasPathSeparator = path.includes("/") || path.includes(sep);
+  if (hasPathSeparator) return false;
+  // 其余情况视为包（如lodash、react等）
+  return true;
+}
+export function importJson<T = Record<string, unknown>>(
+  path: string,
+  options: {
+    /** 当文件不存在时是否抛出错误，默认为 false */
+    throwIfMissing?: boolean;
+    /** 当解析失败时是否抛出错误，默认为 false */
+    throwIfInvalid?: boolean;
+  } = {}
+): T {
+  const { throwIfMissing = false, throwIfInvalid = false } = options;
+  // 检查文件是否存在
+  if (!existsSync(path)) {
+    const error = new Error(`JSON 文件不存在: ${path}`);
+    if (throwIfMissing) throw error;
+    console.warn(error.message); // 提供警告信息便于调试
+    return {} as T;
   }
+  try {
+    // 读取并解析文件
+    const content = readFileSync(path, "utf-8").trim();
+    // 处理空文件情况
+    if (!content) return {} as T;
+    return JSON.parse(content) as T;
+  } catch (error) {
+    const parseError =
+      error instanceof Error
+        ? new Error(`解析 JSON 失败 (${path}): ${error.message}`)
+        : new Error(`解析 JSON 失败 (${path})`);
+    if (throwIfInvalid) throw parseError;
+    return {} as T;
+  }
+}
+export async function importModule<T = any>(path: string): Promise<T> {
+  const isPkg = isPackage(path);
+  const absolutePath = getAbsolutePath(path);
   if (typeof require === "undefined") {
-    // ESM 环境
-    let mod = await import(pathToFileURL(path).href);
-    mod = mod?.default?.__esModule ? mod.default : mod;
-    return mod?.default || mod;
+    const module = await import(
+      isPkg ? path : pathToFileURL(absolutePath).href
+    );
+    return (isPkg ? module : module.default ?? module) as T;
   } else {
-    // CommonJS 环境
-    const mod = require(path);
-    return mod?.__esModule && mod.default ? mod.default : mod;
+    const module = require(isPkg ? path : absolutePath);
+    if (module.default && Object.keys(module).length === 1)
+      return module.default as T;
+    if (module.__esModule) return (module.default ?? module) as T;
+    return module as T;
   }
 }
 export function ENC(text: string) {
@@ -186,11 +230,7 @@ export function set(str: string, value: any) {
   current[lastKey] = value;
   return result;
 }
-function readPackage(): PackageJson {
-  const pkgPath = resolve("package.json");
-  if (!existsSync(pkgPath)) throw new Error("package.json not found");
-  return JSON.parse(readFileSync(pkgPath, "utf8"));
-}
+
 export function ctx(): CtxArgs {
   const pkg = readPackage();
   return {

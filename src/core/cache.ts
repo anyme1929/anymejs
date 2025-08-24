@@ -1,8 +1,118 @@
-import { CacheOptions, CacheStats, ICache, CacheItem } from "../types";
+/**
+ * 缓存配置选项接口
+ */
+export interface CacheOptions {
+  /**
+   * 最大缓存容量（项目数量），默认1000
+   */
+  maxSize?: number;
+
+  /**
+   * 最大内存使用量（字节），0表示无限制，默认0
+   */
+  maxMemorySize?: number;
+
+  /**
+   * 定期清理过期项的间隔时间(毫秒)，默认60000(1分钟)
+   */
+  cleanupIntervalMs?: number;
+}
+/**
+ * 缓存统计信息接口
+ */
+export interface CacheStats {
+  /**
+   * 缓存命中次数
+   */
+  hits: number;
+
+  /**
+   * 缓存未命中次数
+   */
+  misses: number;
+
+  /**
+   * 当前缓存大小（项目数量）
+   */
+  size: number;
+
+  /**
+   * 最大缓存容量（项目数量）
+   */
+  maxSize: number;
+
+  /**
+   * 被淘汰的缓存项数量
+   */
+  evictions: number;
+
+  /**
+   * 当前内存使用量（字节）
+   */
+  memorySize: number;
+
+  /**
+   * 最大内存使用量（字节）
+   */
+  maxMemorySize: number;
+}
+/**
+ * 缓存项接口
+ */
+export interface CacheItem<T> {
+  /**
+   * 缓存的值
+   */
+  value: T;
+
+  /**
+   * 缓存项大小估算（字节）
+   */
+  size: number;
+
+  /**
+   * 创建时间戳(毫秒)
+   */
+  createdAt: number;
+
+  /**
+   * 过期时间戳(毫秒)，undefined表示永不过期
+   */
+  expiresAt?: number;
+
+  /**
+   * 最后访问时间戳(毫秒)
+   */
+  lastAccessed: number;
+
+  /**
+   * 访问次数
+   */
+  accessCount: number;
+}
+/**
+ * 批量设置缓存项的参数接口
+ */
+export interface MSetEntry<T = any> {
+  /**
+   * 缓存键
+   */
+  key: string;
+
+  /**
+   * 缓存值
+   */
+  value: T;
+
+  /**
+   * 过期时间(毫秒)，undefined表示永不过期
+   */
+  ttl?: number;
+}
 /**
  * 基于内存的LRU缓存实现，支持过期时间和容量限制
  */
-export class ACache<T = any> implements ICache<T> {
+export class ACache<T = any> {
   private cache: Map<string, CacheItem<T>>; // 利用Map的插入顺序特性实现LRU
   private maxSize: number; // 最大缓存条目数
   private maxMemorySize: number; // 最大内存占用(字节)，0表示无限制
@@ -374,3 +484,5 @@ export class ACache<T = any> implements ICache<T> {
     this.clear();
   }
 }
+
+export default ACache;

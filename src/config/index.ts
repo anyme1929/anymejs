@@ -7,6 +7,7 @@ import {
   isEmpty,
   set,
   importModule,
+  importJson,
   getAbsolutePath,
   ctx,
   isFunction,
@@ -92,6 +93,7 @@ export class CoreConfig {
   }
   private async importConfig(path: string) {
     try {
+      if (extname(path) === ".json") return importJson(path);
       const module = await importModule(path);
       const result = isFunction(module) ? module(ctx()) : module;
       return isEmpty(result) ? {} : result;

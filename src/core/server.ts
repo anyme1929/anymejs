@@ -97,7 +97,6 @@ export class CreateServer implements ICreateServer {
       ssl: true,
     };
   }
-
   private async readFile(path: string): Promise<Buffer | null> {
     try {
       return readFileSync(getAbsolutePath(path));

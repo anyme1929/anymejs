@@ -154,7 +154,7 @@ export const CONFIG = {
   },
   limiter: {
     enable: false,
-    rules: {
+    rule: {
       slowDownOptions: {
         windowMs: 15 * 60 * 1000, // 15分钟
         delayAfter: 100, // 允许100个请求后开始延迟
@@ -175,4 +175,7 @@ export const CONFIG = {
     },
   },
   cache: {},
+  sse: {
+    enabled: false,
+  },
 } as IConfig;

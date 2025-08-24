@@ -1,9 +1,7 @@
-import { rateLimit } from "express-rate-limit";
-import { slowDown } from "express-slow-down";
 import { WELLCOME_HTML } from "../utils/constants";
 import session from "express-session";
 import RedisStore from "../utils/session-ioredis";
-import { encrypt, getEncryptionKey } from "../utils";
+import { encrypt, getEncryptionKey, importModule } from "../utils";
 import { IConfig, IMiddleware, IRedis, Logger, Application } from "../types";
 export class Middleware implements IMiddleware {
   private app!: Application;
@@ -15,24 +13,25 @@ export class Middleware implements IMiddleware {
     this.isInitialized = true;
     return this;
   }
-  applyRoute() {
+  async applyRoute() {
     if (!this.isInitialized) throw new Error("Middleware not initialized");
     this.app
-      .get("/", (_: any, res: any) => {
+      .get("/", (_, res) => {
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.send(WELLCOME_HTML);
       })
-      .get("/encrypt/:text", (req: any, res: any) =>
+      .get("/encrypt/:text", (req, res) =>
         res.send(encrypt(req.params.text, getEncryptionKey()))
       );
   }
-  applyLimiter(config: IConfig["limiter"]) {
+  async applyLimiter(config: IConfig["limiter"]) {
     if (!this.isInitialized) throw new Error("Middleware not initialized");
-    const { enable, rules } = config;
-    if (!enable || !rules) return;
-    if (Array.isArray(rules)) {
-      rules.forEach((obj) => {
-        const [key, value] = Object.entries(obj)[0];
+    const { enable, rules, rule } = config;
+    if (!enable) return;
+    const { rateLimit } = await importModule("express-rate-limit");
+    const { slowDown } = await importModule("express-slow-down");
+    if (rules) {
+      Object.entries(rules).forEach(([key, value]) => {
         if (Array.isArray(value))
           this.app.use(key, slowDown(value[0]), rateLimit(value[1]));
         else {
@@ -41,13 +40,13 @@ export class Middleware implements IMiddleware {
           if (rateLimitOptions) this.app.use(key, rateLimit(rateLimitOptions));
         }
       });
-    } else {
-      const { slowDownOptions, rateLimitOptions } = rules;
+    } else if (rule) {
+      const { slowDownOptions, rateLimitOptions } = rule;
       if (slowDownOptions) this.app.use(slowDown(slowDownOptions));
       if (rateLimitOptions) this.app.use(rateLimit(rateLimitOptions));
     }
   }
-  applySession(config: IConfig["session"], redis: IRedis) {
+  async applySession(config: IConfig["session"], redis: IRedis) {
     try {
       const { enable, type, prefix, client } = config;
       if (enable === false) return;

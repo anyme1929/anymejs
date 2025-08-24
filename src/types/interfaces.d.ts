@@ -13,12 +13,10 @@ import type { Logger, Logform, transports } from "winston";
 import type { DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import type { Options as RateLimitOptions } from "express-rate-limit";
 import type { Options as SlowDownOptions } from "express-slow-down";
+import type { SSEOptions } from "../core/sse";
+import type { CacheOptions } from "../core/cache";
 export type { Application, Logger };
-export interface HealthCheckMap {
-  verbatim?: boolean;
-  __unsafeExposeStackTraces?: boolean;
-  [key: string]: HealthCheck | boolean | undefined;
-}
+
 /**
  * 自定义Server接口，用于替换直接依赖node:http的Server类型
  */
@@ -133,22 +131,31 @@ export interface IConfig {
     /** 是否启用限流 */
     enable: boolean;
     /** 限流规则 */
-    rules?:
-      | {
-          /** 限流配置 */
-          [key: string]:
-            | [Partial<SlowDownOptions>, Partial<RateLimitOptions>]
-            | {
-                slowDownOptions?: Partial<SlowDownOptions>;
-                rateLimitOptions?: Partial<RateLimitOptions>;
-              };
-        }[]
-      | {
-          slowDownOptions?: Partial<SlowDownOptions>;
-          rateLimitOptions?: Partial<RateLimitOptions>;
-        };
+    rule?: {
+      slowDownOptions?: Partial<SlowDownOptions>;
+      rateLimitOptions?: Partial<RateLimitOptions>;
+    };
+    rules?: {
+      /** 限流配置 */
+      [key: string]:
+        | [Partial<SlowDownOptions>, Partial<RateLimitOptions>]
+        | {
+            slowDownOptions?: Partial<SlowDownOptions>;
+            rateLimitOptions?: Partial<RateLimitOptions>;
+          };
+    };
   };
   cache: CacheOptions;
+  sse: {
+    enabled: boolean;
+    path?: string;
+    options?: SSEOptions;
+  };
+}
+export interface HealthCheckMap {
+  verbatim?: boolean;
+  __unsafeExposeStackTraces?: boolean;
+  [key: string]: HealthCheck | boolean | undefined;
 }
 /**
  * GracefulExit 类的接口定义，包含优雅退出功能的相关属性和方法
@@ -305,122 +312,7 @@ export interface CtxArgs {
   ROOT: string;
   HOME: string;
 }
-/**
- * 缓存配置选项接口
- */
-export interface CacheOptions {
-  /**
-   * 最大缓存容量（项目数量），默认1000
-   */
-  maxSize?: number;
 
-  /**
-   * 最大内存使用量（字节），0表示无限制，默认0
-   */
-  maxMemorySize?: number;
-
-  /**
-   * 缓存淘汰策略，默认'lru'
-   */
-  evictionPolicy?: EvictionPolicy;
-
-  /**
-   * 定期清理过期项的间隔时间(毫秒)，默认60000(1分钟)
-   */
-  cleanupIntervalMs?: number;
-}
-/**
- * 缓存统计信息接口
- */
-export interface CacheStats {
-  /**
-   * 缓存命中次数
-   */
-  hits: number;
-
-  /**
-   * 缓存未命中次数
-   */
-  misses: number;
-
-  /**
-   * 当前缓存大小（项目数量）
-   */
-  size: number;
-
-  /**
-   * 最大缓存容量（项目数量）
-   */
-  maxSize: number;
-
-  /**
-   * 被淘汰的缓存项数量
-   */
-  evictions: number;
-
-  /**
-   * 当前内存使用量（字节）
-   */
-  memorySize: number;
-
-  /**
-   * 最大内存使用量（字节）
-   */
-  maxMemorySize: number;
-}
-/**
- * 缓存项接口
- */
-export interface CacheItem<T> {
-  /**
-   * 缓存的值
-   */
-  value: T;
-
-  /**
-   * 缓存项大小估算（字节）
-   */
-  size: number;
-
-  /**
-   * 创建时间戳(毫秒)
-   */
-  createdAt: number;
-
-  /**
-   * 过期时间戳(毫秒)，undefined表示永不过期
-   */
-  expiresAt?: number;
-
-  /**
-   * 最后访问时间戳(毫秒)
-   */
-  lastAccessed: number;
-
-  /**
-   * 访问次数
-   */
-  accessCount: number;
-}
-/**
- * 批量设置缓存项的参数接口
- */
-export interface MSetEntry<T = any> {
-  /**
-   * 缓存键
-   */
-  key: string;
-
-  /**
-   * 缓存值
-   */
-  value: T;
-
-  /**
-   * 过期时间(毫秒)，undefined表示永不过期
-   */
-  ttl?: number;
-}
 /**
  * 内存缓存接口定义
  */
