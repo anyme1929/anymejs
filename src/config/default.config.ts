@@ -176,6 +176,6 @@ export const CONFIG = {
   },
   cache: {},
   sse: {
-    enabled: false,
+    enable: false,
   },
 } as IConfig;

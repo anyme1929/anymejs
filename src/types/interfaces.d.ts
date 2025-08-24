@@ -13,7 +13,7 @@ import type { Logger, Logform, transports } from "winston";
 import type { DailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import type { Options as RateLimitOptions } from "express-rate-limit";
 import type { Options as SlowDownOptions } from "express-slow-down";
-import type { SSEOptions } from "../core/sse";
+import type { SSEOptions, type SSE } from "../core/sse";
 import type { CacheOptions } from "../core/cache";
 export type { Application, Logger };
 
@@ -147,9 +147,14 @@ export interface IConfig {
   };
   cache: CacheOptions;
   sse: {
-    enabled: boolean;
-    path?: string;
-    options?: SSEOptions;
+    enable: boolean;
+    routes?: {
+      [key: string]: {
+        initial?: unknown | unknown[];
+        options?: SSEOptions;
+        controller: (args: SSE) => void;
+      };
+    };
   };
 }
 export interface HealthCheckMap {
@@ -200,6 +205,7 @@ export interface IMiddleware {
   applySession(config: IConfig["session"], redis?: IRedis);
   applyRoute();
   applyLimiter(config: IConfig["limiter"]);
+  applySSE(config: IConfig["sse"]);
 }
 export interface IHandler {
   name: string;

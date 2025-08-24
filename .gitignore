@@ -5,6 +5,8 @@ dist/**/*
 config/**/*
 controllers/**/*
 models/**/*
+sse/**/*
+services/**/*
 .env
 .vscode/**/*
 ssl/**/*

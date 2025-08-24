@@ -46,8 +46,9 @@ export class Anyme {
   private async initialize() {
     try {
       await Promise.all([this.initDatabase(), this.initRedis()]);
-      await this.middleware.applySession(this.config.session, this.redis);
       await this.middleware.applyLimiter(this.config.limiter);
+      await this.middleware.applySession(this.config.session, this.redis);
+      await this.middleware.applySSE(this.config.sse);
       await this.middleware.applyRoute();
     } catch (error) {
       this.logger.error("❌ Failed to initialize", error);

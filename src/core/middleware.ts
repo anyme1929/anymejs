@@ -3,6 +3,7 @@ import session from "express-session";
 import RedisStore from "../utils/session-ioredis";
 import { encrypt, getEncryptionKey, importModule } from "../utils";
 import { IConfig, IMiddleware, IRedis, Logger, Application } from "../types";
+import { SSE } from "./sse";
 export class Middleware implements IMiddleware {
   private app!: Application;
   private isInitialized: boolean = false;
@@ -49,7 +50,7 @@ export class Middleware implements IMiddleware {
   async applySession(config: IConfig["session"], redis: IRedis) {
     try {
       const { enable, type, prefix, client } = config;
-      if (enable === false) return;
+      if (!enable) return;
       if (type === "redis") {
         const redisClient = redis?.get(config.redis);
         if (!redisClient) throw new Error("Redis is required");
@@ -64,5 +65,13 @@ export class Middleware implements IMiddleware {
       this.logger.error("❌ Failed to config session:", error);
       throw error;
     }
+  }
+  async applySSE(config: IConfig["sse"]) {
+    if (!config.enable) return;
+    Object.entries(config.routes!).forEach(([path, opt]) => {
+      const sse = new SSE(opt.initial, opt.options);
+      this.app.use(path, sse.init);
+      opt.controller(sse);
+    });
   }
 }

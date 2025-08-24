@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve, isAbsolute, extname, sep } from "node:path";
+import { resolve, isAbsolute, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   randomBytes,
@@ -144,8 +144,8 @@ export function decrypt(encryptedText: string, key: string): string {
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return decrypted.toString("utf8");
 }
-export function getAbsolutePath(path: string) {
-  return isAbsolute(path) ? path : resolve(path);
+export function getAbsolutePath(path: string, cwd?: string) {
+  return resolve(cwd ?? process.cwd(), path);
 }
 function readPackage(): PackageJson {
   const pkgPath = resolve("package.json");
@@ -198,9 +198,12 @@ export function importJson<T = Record<string, unknown>>(
     return {} as T;
   }
 }
-export async function importModule<T = any>(path: string): Promise<T> {
+export async function importModule<T = any>(
+  path: string,
+  cwd?: string
+): Promise<T> {
   const isPkg = isPackage(path);
-  const absolutePath = getAbsolutePath(path);
+  const absolutePath = getAbsolutePath(path, cwd);
   if (typeof require === "undefined") {
     const module = await import(
       isPkg ? path : pathToFileURL(absolutePath).href
