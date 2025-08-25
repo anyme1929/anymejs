@@ -42,7 +42,7 @@ export function deepMerge<T extends Record<string, any>>(
       return merge(acc, source);
     },
     { ...target }
-  );
+  ) as T;
 }
 export function isObject(obj: unknown): obj is Record<string, unknown> {
   return (

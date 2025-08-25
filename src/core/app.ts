@@ -12,6 +12,7 @@ import type {
   Application,
   Ctx,
 } from "../types";
+import { importModule } from "../utils";
 export class Anyme {
   private server: IServer | null = null;
   constructor(
@@ -52,7 +53,7 @@ export class Anyme {
     this.app.use(...handlers);
     return this;
   }
-  private async getCtx(): Promise<Ctx> {
+  private getCtx(): Ctx {
     return {
       cache: this.cache,
       logger: this.logger,
@@ -66,9 +67,7 @@ export class Anyme {
       await Promise.all([this.initDatabase(), this.initRedis()]);
       await this.middleware.applyLimiter(config.limiter);
       await this.middleware.applySession(config.session, this.redis);
-      await this.middleware.applySSE(config.sse, {
-        ...this.getCtx(),
-      });
+      await this.middleware.applySSE(config.sse, this.getCtx());
       await this.middleware.applyRoute();
     } catch (error) {
       this.logger.error("❌ Failed to initialize", error);

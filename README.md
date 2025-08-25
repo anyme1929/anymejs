@@ -217,6 +217,16 @@ openssl req -new -x509 -days 3650 -key server.key -out server.crt -config openss
 
 - server.crt：证书文件（有效期 10 年）
 
+sse
+location /sse {
+proxy_pass http://localhost:3000;
+proxy_buffering off; # 禁用缓冲
+proxy_cache off; # 禁用缓存
+proxy_set_header Connection '';
+proxy_http_version 1.1;
+chunked_transfer_encoding off;
+}
+
 ### 项目结构
 
 ```

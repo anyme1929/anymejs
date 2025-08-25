@@ -1,0 +1,387 @@
+http://127.0.0.1:3000/sse.html
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE客户端测试页面</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .control-panel,
+        .event-display {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        input,
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #connectBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #connectBtn:hover {
+            background-color: #45a049;
+        }
+
+        #disconnectBtn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #disconnectBtn:hover {
+            background-color: #d32f2f;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-group button {
+            flex: 1;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .connected {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .disconnected {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .event-display {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .events {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 600px;
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .event {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #6e8efb;
+            background-color: white;
+            border-radius: 0 5px 5px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: #6e8efb;
+        }
+
+        .event-data {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .clear-btn {
+            background-color: #9e9e9e;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .clear-btn:hover {
+            background-color: #757575;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>SSE客户端测试页面</h1>
+        <p class="description">用于测试Server-Sent Events (SSE)服务器的客户端界面</p>
+    </header>
+
+    <div class="container">
+        <div class="control-panel">
+            <h2>连接控制</h2>
+
+            <div class="input-group">
+                <label for="url">SSE服务器URL</label>
+                <input type="text" id="url" value="https://localhost/sse" placeholder="输入SSE服务器端点">
+            </div>
+
+            <div class="input-group">
+                <label for="eventType">事件类型过滤器</label>
+                <input type="text" id="eventType" placeholder="输入要监听的事件类型（留空接收所有事件）">
+            </div>
+
+            <div class="btn-group">
+                <button id="connectBtn">连接</button>
+                <button id="disconnectBtn">断开</button>
+            </div>
+
+            <div class="status disconnected" id="status">未连接</div>
+
+            <!-- 已移除：发送测试消息相关的输入框和按钮 -->
+
+            <button id="clearBtn" class="clear-btn">清除事件日志</button>
+        </div>
+
+        <div class="event-display">
+            <h2>事件流</h2>
+            <div class="events" id="events"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlInput = document.getElementById('url');
+            const eventTypeInput = document.getElementById('eventType');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const statusDiv = document.getElementById('status');
+            const eventsDiv = document.getElementById('events');
+            const clearBtn = document.getElementById('clearBtn');
+
+            // 已移除：messageInput、sendBtn 的DOM元素获取
+
+            let eventSource = null;
+            let reconnectAttempts = 0;
+            const maxReconnectAttempts = 5;
+
+            // 更新连接状态显示
+            function updateStatus(connected) {
+                if (connected) {
+                    statusDiv.textContent = '已连接';
+                    statusDiv.className = 'status connected';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                } else {
+                    statusDiv.textContent = '未连接';
+                    statusDiv.className = 'status disconnected';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                }
+            }
+
+            // 添加事件到显示区域
+            function addEvent(type, data, id) {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'event';
+
+                const eventHeader = document.createElement('div');
+                eventHeader.className = 'event-header';
+
+                const eventType = document.createElement('span');
+                eventType.className = 'event-type';
+                eventType.textContent = type || 'message';
+
+                const eventId = document.createElement('span');
+                eventId.textContent = id ? 'ID:' + id : '';
+
+                eventHeader.appendChild(eventType);
+                eventHeader.appendChild(eventId);
+
+                const eventData = document.createElement('div');
+                eventData.className = 'event-data';
+
+                try {
+                    // 尝试解析JSON数据
+                    const parsedData = JSON.parse(data);
+                    eventData.textContent = JSON.stringify(parsedData, null, 2);
+                } catch (e) {
+                    // 如果不是JSON，直接显示
+                    eventData.textContent = data;
+                }
+
+                eventDiv.appendChild(eventHeader);
+                eventDiv.appendChild(eventData);
+
+                eventsDiv.appendChild(eventDiv);
+                eventsDiv.scrollTop = eventsDiv.scrollHeight;
+            }
+
+            // 连接到SSE服务器
+            function connect() {
+                if (eventSource) {
+                    return;
+                }
+
+                const url = urlInput.value;
+                if (!url) {
+                    alert('请输入SSE服务器URL');
+                    return;
+                }
+
+                try {
+                    eventSource = new EventSource(url);
+
+                    eventSource.onopen = function () {
+                        updateStatus(true);
+                        reconnectAttempts = 0;
+                        addEvent('connection', '连接已建立');
+                    };
+
+                    eventSource.onerror = function () {
+                        updateStatus(false);
+                        addEvent('error', '连接错误');
+
+                        // 尝试重新连接
+                        if (reconnectAttempts < maxReconnectAttempts) {
+                            reconnectAttempts++;
+                            setTimeout(connect, 1000 * reconnectAttempts);
+                        } else {
+                            addEvent('error', '达到最大重连次数，连接失败');
+                        }
+                    };
+
+                    // 监听所有事件
+                    eventSource.onmessage = function (event) {
+                        addEvent('message', event.data, event.lastEventId);
+                    };
+
+                    // 监听特定事件类型
+                    const eventType = eventTypeInput.value.trim();
+                    if (eventType) {
+                        eventSource.addEventListener(eventType, function (event) {
+                            addEvent(eventType, event.data, event.lastEventId);
+                        });
+                    }
+
+                } catch (error) {
+                    console.error('创建EventSource失败:', error);
+                    addEvent('error', '创建连接失败');
+                    updateStatus(false);
+                }
+            }
+
+            // 断开连接
+            function disconnect() {
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                    updateStatus(false);
+                    addEvent('connection', '连接已关闭');
+                }
+            }
+
+            // 清除事件日志
+            function clearEvents() {
+                eventsDiv.innerHTML = '';
+            }
+
+            // 绑定事件处理程序（已移除sendBtn的事件绑定）
+            connectBtn.addEventListener('click', connect);
+            disconnectBtn.addEventListener('click', disconnect);
+            clearBtn.addEventListener('click', clearEvents);
+
+            // 初始化状态
+            updateStatus(false);
+        });
+    </script>
+</body>
+
+</html>

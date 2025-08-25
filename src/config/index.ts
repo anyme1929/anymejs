@@ -1,7 +1,7 @@
 import { CONFIG, ENV_KEY_VALUES } from "./default.config";
 import { extname, basename, join, resolve } from "node:path";
 import fg from "fast-glob";
-import { type IConfig } from "../types";
+import type { UserConfig, IConfig } from "../types";
 import {
   deepMerge,
   isEmpty,
@@ -40,7 +40,7 @@ export class CoreConfig {
     if (this.configs.has("core") || isEmpty(this.fileGroups))
       return this.#config;
     await this.loadAllConfigs();
-    this.#config = deepMerge(this.#config, ...this.getCoreConfigs());
+    this.#config = deepMerge(this.#config, ...this.getCoreConfigs()) as IConfig;
     this.loadEnvConfig();
     this.resolveServerPaths();
     this.validate();
@@ -48,7 +48,7 @@ export class CoreConfig {
     return this.#config;
   }
   private getCoreConfigs() {
-    const configs: object[] = [];
+    const configs: UserConfig[] = [];
     if (this.configs.has("default")) {
       configs.push(this.configs.get("default")!);
     }
@@ -120,7 +120,7 @@ export class CoreConfig {
     return join(this.path, `*.config{${ext}}`).replace(/\\/g, "/");
   }
   private merge(str: string, value: any) {
-    this.#config = deepMerge(this.#config, set(str, value));
+    this.#config = deepMerge(this.#config, set(str, value)) as IConfig;
   }
   private async validate() {
     // 验证必要配置项

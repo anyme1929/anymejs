@@ -14,6 +14,8 @@ export interface SSEOptions {
   initialEvent?: string;
   // 心跳检测
   heartbeat?: number;
+  // 允许的源
+  origin?: string | string[];
 }
 
 /**
@@ -73,6 +75,7 @@ export class SSE extends EventEmitter {
     let id = 0;
     // 设置响应头，指定内容类型为text/event-stream
     this.setup(req, res);
+    this.emit("connect", req, res);
     // 增加事件监听器的最大数量，避免连接过多时警告
     this.setMaxListeners(this.getMaxListeners() + 2);
     const { dataListener, serializeListener } = this.createListeners(res, {
@@ -99,7 +102,7 @@ export class SSE extends EventEmitter {
       // 确保最大监听器数量不会小于0
       this.setMaxListeners(Math.max(0, this.getMaxListeners() - 2));
       // 触发close事件，通知外部连接已关闭
-      this.emit("close");
+      this.emit("close", req, res);
     };
     // 注册连接关闭相关的事件处理
     req.on("close", cleanup); // 客户端断开连接
@@ -183,6 +186,7 @@ export class SSE extends EventEmitter {
     return { dataListener, serializeListener };
   }
   private setup(req: Request, res: Response) {
+    const vary: string[] = [];
     // 配置Socket选项
     // 禁用超时，保持长连接
     req.socket.setTimeout(0);
@@ -192,6 +196,14 @@ export class SSE extends EventEmitter {
     req.socket.setKeepAlive(true);
     // 设置响应状态码和头部
     res.statusCode = 200;
+    if (this.options.origin) {
+      vary.push("Origin");
+      if (Array.isArray(this.options.origin)) {
+        if (this.options.origin.includes(req.headers.origin!))
+          res.setHeader("Access-Control-Allow-Origin", req.headers.origin!);
+      } else if (typeof this.options.origin === "string")
+        res.setHeader("Access-Control-Allow-Origin", this.options.origin);
+    }
     // 告知客户端这是一个SSE流
     res.setHeader("Content-Type", "text/event-stream");
     // 禁用缓存
@@ -201,7 +213,11 @@ export class SSE extends EventEmitter {
     // HTTP/1.1需要设置Connection: keep-alive
     if (req.httpVersion !== "2.0") res.setHeader("Connection", "keep-alive");
     // 如果启用压缩，设置相应的头部
-    if (this.options.isCompressed) res.setHeader("Content-Encoding", "deflate");
+    if (this.options.isCompressed) {
+      res.setHeader("Content-Encoding", "deflate");
+      vary.push("Accept-Encoding");
+    }
+    if (vary.length > 0) res.setHeader("Vary", vary.join(", "));
   }
   private flush(res: Response) {
     if (typeof (res as any).flushHeaders === "function")
@@ -211,7 +227,7 @@ export class SSE extends EventEmitter {
   private setupHeartbeat(res: Response) {
     if (this.options.heartbeat === 0) return;
     this.heartbeatInterval = setInterval(() => {
-      if (!res.writable) {
+      if (res.writable) {
         res.write(": heartbeat\n\n");
         this.flush(res);
       } else this.clearHeartbeat();

@@ -177,5 +177,7 @@ export const CONFIG = {
   cache: {},
   sse: {
     enable: false,
+    initial: "connect success",
+    pattern: "**/sse/*index.{ts,js,mjs,cjs}",
   },
 } as IConfig;

@@ -76,17 +76,17 @@ export class Middleware implements IMiddleware {
   async applySSE(config: IConfig["sse"], ctx: Ctx) {
     if (!config.enable) return;
     Object.entries(config.routes!).forEach(([path, opt]) => {
-      const sse = new SSE(opt.initial, opt.options);
-      this.app.use(path, (req, res) => {
-        sse.init(req, res);
-        if (isFunction(opt.controller))
-          opt.controller({
-            request: req,
-            response: res,
-            sse,
-            ...ctx,
-          });
-      });
+      if (opt.options)
+        opt.options["origin"] = opt.options.origin ?? config.origin;
+      else opt.options = { origin: config.origin };
+      const sse = new SSE(opt.initial ?? config.initial, opt.options);
+      this.app.use(path, sse.init);
+      if (isFunction(opt.controller))
+        opt.controller({
+          app: this.app,
+          sse,
+          ...ctx,
+        });
     });
   }
 }
