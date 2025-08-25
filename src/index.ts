@@ -14,7 +14,7 @@ export const injectConfig = DI.injectConfig;
 export const Redis = DI.Redis;
 export const Cache = DI.Cache;
 import express from "express";
-createApp(express()).then((app) => {
+createApp(express()).then(async (app) => {
   app.use(express.urlencoded({ extended: true }));
-  app.bootstrap();
+  await app.bootstrap();
 });

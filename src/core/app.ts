@@ -1,5 +1,4 @@
 import type {
-  IConfig,
   IDataSource,
   IRedis,
   ICache,
@@ -12,7 +11,6 @@ import type {
   Application,
   Ctx,
 } from "../types";
-import { importModule } from "../utils";
 export class Anyme {
   private server: IServer | null = null;
   constructor(
@@ -52,6 +50,9 @@ export class Anyme {
   use<T extends (...args: any[]) => any>(...handlers: T[]) {
     this.app.use(...handlers);
     return this;
+  }
+  getSSE(path: string) {
+    return this.middleware.getSSE(path);
   }
   private getCtx(): Ctx {
     return {

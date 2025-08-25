@@ -177,7 +177,7 @@ export interface IConfig {
       [key: string]: {
         initial?: unknown | unknown[];
         options?: SSEOptions;
-        controller: ((arg: Ctx) => void) | string;
+        controller?: ((arg: Ctx) => void) | string;
       };
     };
   };
@@ -252,6 +252,7 @@ export interface IMiddleware {
   applyRoute();
   applyLimiter(config: IConfig["limiter"]);
   applySSE(config: IConfig["sse"], ctx: Ctx);
+  getSSE(path: string): SSE | undefined;
 }
 
 export interface IHandler {

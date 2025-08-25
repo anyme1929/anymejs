@@ -12,6 +12,7 @@ import {
 } from "../types";
 import { SSE } from "./sse";
 export class Middleware implements IMiddleware {
+  private sseMap: Map<string, SSE> = new Map();
   private app!: Application;
   private isInitialized: boolean = false;
   constructor(private logger: Logger) {}
@@ -74,13 +75,14 @@ export class Middleware implements IMiddleware {
     }
   }
   async applySSE(config: IConfig["sse"], ctx: Ctx) {
-    if (!config.enable) return;
-    Object.entries(config.routes!).forEach(([path, opt]) => {
-      if (opt.options)
-        opt.options["origin"] = opt.options.origin ?? config.origin;
-      else opt.options = { origin: config.origin };
-      const sse = new SSE(opt.initial ?? config.initial, opt.options);
+    if (!config.enable || !config.routes) return;
+    Object.entries(config.routes).forEach(([path, opt]) => {
+      const options = opt.options
+        ? { ...opt.options, origin: opt.options.origin ?? config.origin }
+        : { origin: config.origin };
+      const sse = new SSE(opt.initial ?? config.initial, options);
       this.app.use(path, sse.init);
+      this.sseMap.set(path, sse);
       if (isFunction(opt.controller))
         opt.controller({
           app: this.app,
@@ -88,5 +90,8 @@ export class Middleware implements IMiddleware {
           ...ctx,
         });
     });
+  }
+  getSSE(path: string): SSE | undefined {
+    return this.sseMap.get(path);
   }
 }
